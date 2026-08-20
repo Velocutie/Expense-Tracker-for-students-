@@ -188,7 +188,7 @@ async function loadSupabaseData(userId: string): Promise<StoreData> {
     supabase.from('saved_money_entries').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
     supabase.from('savings_goals').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
     supabase.from('recurring_expenses').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
-    supabase.from('app_settings').select('*').eq('user_id', userId).single(),
+    supabase.from('app_settings').select('*').eq('user_id', userId).maybeSingle(),
   ]);
 
   return {
@@ -225,20 +225,42 @@ async function loadSupabaseData(userId: string): Promise<StoreData> {
 // ===================== PROVIDER =====================
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [data, setData] = useState<StoreData>({ ...emptyData });
   const [loaded, setLoaded] = useState(false);
   const [isUsingCloud, setIsUsingCloud] = useState(false);
 
-  // Load data on mount
+  // Load data once auth has resolved
   useEffect(() => {
+    // Don't do anything until AuthProvider has finished its getSession() call.
+    // Without this guard, init() fires with user=null immediately on mount,
+    // loads empty localStorage data, and races against the real session restore.
+    if (authLoading) return;
+
     async function init() {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[AUTH] user id:', user?.id ?? 'null');
+      }
       if (user) {
         try {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[MONEY] loading from Supabase for user:', user.id);
+          }
           const cloudData = await loadSupabaseData(user.id);
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[MONEY] rows returned — money_received:', cloudData.moneyReceived.length,
+              '| expenses:', cloudData.expenses.length,
+              '| budgets:', cloudData.budgets.length,
+              '| savings goals:', cloudData.savingsGoals.length,
+              '| saved money entries:', cloudData.savedMoneyEntries.length,
+              '| recurring expenses:', cloudData.recurringExpenses.length);
+          }
           setData(cloudData);
           setIsUsingCloud(true);
-        } catch {
+        } catch (err) {
+          if (process.env.NODE_ENV === 'development') {
+            console.error('[MONEY] load error — falling back to localStorage:', err);
+          }
           // Fallback to local storage
           setData(loadLocalData());
           setIsUsingCloud(false);
@@ -250,12 +272,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setLoaded(true);
     }
     init();
-  }, [user]);
+  }, [user, authLoading]);
 
-  // Save to localStorage when data changes (always, as backup)
+  // Save to localStorage only when NOT using cloud, to avoid overwriting
+  // Supabase-loaded state with stale/empty local data during auth race conditions.
   useEffect(() => {
-    if (loaded) saveLocalData(data);
-  }, [data, loaded]);
+    if (loaded && !isUsingCloud) saveLocalData(data);
+  }, [data, loaded, isUsingCloud]);
 
   // ===================== EXPENSES =====================
   const addExpense = useCallback((expense: Omit<Expense, 'id' | 'createdAt'>) => {
@@ -263,11 +286,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const createdAt = new Date().toISOString();
     setData(p => ({ ...p, expenses: [...p.expenses, { ...expense, id, createdAt }] }));
     if (user) {
+      if (process.env.NODE_ENV === 'development') console.log('[EXPENSE] inserting:', expense.amount);
       supabase.from('expenses').insert({
         id, user_id: user.id, amount: expense.amount,
         category: expense.category, description: expense.description,
         date: expense.date, created_at: createdAt,
-      }).then(({ error }) => { if (error) console.error('Supabase insert error:', error); });
+      }).then(({ error }) => {
+        if (process.env.NODE_ENV === 'development') {
+          if (error) console.error('[EXPENSE] insert error:', error);
+          else console.log('[EXPENSE] insert success');
+        }
+      });
     }
   }, [user]);
 
@@ -300,10 +329,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const createdAt = new Date().toISOString();
     setData(p => ({ ...p, moneyReceived: [...p.moneyReceived, { ...m, id, createdAt }] }));
     if (user) {
+      if (process.env.NODE_ENV === 'development') console.log('[MONEY] inserting:', m.amount);
       supabase.from('money_received').insert({
         id, user_id: user.id, amount: m.amount,
         source: m.source, date: m.date, note: m.note, created_at: createdAt,
-      }).then(({ error }) => { if (error) console.error('Supabase insert error:', error); });
+      }).then(({ error }) => {
+        if (process.env.NODE_ENV === 'development') {
+          if (error) console.error('[MONEY] insert error:', error);
+          else console.log('[MONEY] insert success');
+        }
+      });
     }
   }, [user]);
 
@@ -322,10 +357,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const createdAt = new Date().toISOString();
     setData(p => ({ ...p, budgets: [...p.budgets, { ...b, id, createdAt, spent: 0 }] }));
     if (user) {
+      if (process.env.NODE_ENV === 'development') console.log('[BUDGET] inserting:', b.category);
       supabase.from('budgets').insert({
         id, user_id: user.id, category: b.category,
         limit: b.limit, spent: 0, period: b.period, created_at: createdAt,
-      }).then(({ error }) => { if (error) console.error('Supabase insert error:', error); });
+      }).then(({ error }) => {
+        if (process.env.NODE_ENV === 'development') {
+          if (error) console.error('[BUDGET] insert error:', error);
+          else console.log('[BUDGET] insert success');
+        }
+      });
     }
   }, [user]);
 
@@ -362,10 +403,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const createdAt = new Date().toISOString();
     setData(p => ({ ...p, savedMoneyEntries: [...p.savedMoneyEntries, { ...entry, id, createdAt }] }));
     if (user) {
+      if (process.env.NODE_ENV === 'development') console.log('[SAVED] inserting:', entry.type, entry.amount);
       supabase.from('saved_money_entries').insert({
         id, user_id: user.id, amount: entry.amount,
         type: entry.type, date: entry.date, note: entry.note, created_at: createdAt,
-      }).then(({ error }) => { if (error) console.error('Supabase insert error:', error); });
+      }).then(({ error }) => {
+        if (process.env.NODE_ENV === 'development') {
+          if (error) console.error('[SAVED] insert error:', error);
+          else console.log('[SAVED] insert success');
+        }
+      });
     }
   }, [data.savedMoneyEntries, user]);
 
@@ -384,10 +431,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const createdAt = new Date().toISOString();
     setData(p => ({ ...p, savingsGoals: [...p.savingsGoals, { ...g, id, createdAt }] }));
     if (user) {
+      if (process.env.NODE_ENV === 'development') console.log('[GOAL] inserting:', g.name);
       supabase.from('savings_goals').insert({
         id, user_id: user.id, name: g.name, target: g.target,
         current: g.current, deadline: g.deadline || null, created_at: createdAt,
-      }).then(({ error }) => { if (error) console.error('Supabase insert error:', error); });
+      }).then(({ error }) => {
+        if (process.env.NODE_ENV === 'development') {
+          if (error) console.error('[GOAL] insert error:', error);
+          else console.log('[GOAL] insert success');
+        }
+      });
     }
   }, [user]);
 
@@ -420,10 +473,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const createdAt = new Date().toISOString();
     setData(p => ({ ...p, recurringExpenses: [...p.recurringExpenses, { ...r, id, createdAt }] }));
     if (user) {
+      if (process.env.NODE_ENV === 'development') console.log('[RECURRING] inserting:', r.name);
       supabase.from('recurring_expenses').insert({
         id, user_id: user.id, name: r.name, amount: r.amount,
         category: r.category, frequency: r.frequency, created_at: createdAt,
-      }).then(({ error }) => { if (error) console.error('Supabase insert error:', error); });
+      }).then(({ error }) => {
+        if (process.env.NODE_ENV === 'development') {
+          if (error) console.error('[RECURRING] insert error:', error);
+          else console.log('[RECURRING] insert success');
+        }
+      });
     }
   }, [user]);
 
