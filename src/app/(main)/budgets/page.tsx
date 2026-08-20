@@ -13,6 +13,8 @@ export default function BudgetsPage() {
   const [showForm, setShowForm] = useState(false);
   const [month, setMonth] = useState(getMonthKey(new Date().toISOString().slice(0, 10)));
   const [form, setForm] = useState({ category: 'Food & Drinks', limit: '', period: 'monthly' as 'monthly' | 'weekly' });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const spent = getSpentByCategory(month);
 
@@ -24,15 +26,20 @@ export default function BudgetsPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expenses, month]);
 
-  const resetForm = () => { setForm({ category: 'Food & Drinks', limit: '', period: 'monthly' }); setShowForm(false); };
+  const resetForm = () => { setForm({ category: 'Food & Drinks', limit: '', period: 'monthly' }); setShowForm(false); setSubmitError(null); };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const limit = parseFloat(form.limit);
     if (!limit || limit <= 0) return;
+    setSubmitting(true);
+    setSubmitError(null);
     const existing = budgets.find(b => b.category === form.category && b.period === form.period);
-    if (existing) updateBudget(existing.id, { limit });
-    else addBudget({ category: form.category, limit, period: form.period });
+    let result;
+    if (existing) result = await updateBudget(existing.id, { limit });
+    else result = await addBudget({ category: form.category, limit, period: form.period });
+    setSubmitting(false);
+    if (result.error) { setSubmitError(result.error); return; }
     resetForm();
   };
 
@@ -112,8 +119,9 @@ export default function BudgetsPage() {
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={resetForm} className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-95 transition-all">Cancel</button>
-                <button type="submit" className="flex-1 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 active:scale-95 transition-all">Set Budget</button>
+                <button type="submit" disabled={submitting} className="flex-1 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 active:scale-95 transition-all disabled:opacity-60">{submitting ? 'Saving…' : 'Set Budget'}</button>
               </div>
+              {submitError && <p className="text-sm text-red-600 dark:text-red-400 text-center">{submitError}</p>}
             </form>
           </div>
         </div>

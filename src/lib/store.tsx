@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import {
   Utensils, Bus, GraduationCap, Home, Receipt, Smartphone,
   Gamepad2, ShoppingBag, Heart, Coffee, Repeat, Gift, MoreHorizontal,
@@ -108,24 +108,28 @@ interface StoreData {
   settings: AppSettings;
 }
 
+// All mutating operations return Promise<{ error?: string }> so pages can
+// show errors when a database operation fails instead of silently pretending success.
+interface MutResult { error?: string }
+
 interface StoreContextType extends StoreData {
-  addExpense: (e: Omit<Expense, 'id' | 'createdAt'>) => void;
-  updateExpense: (id: string, data: Partial<Expense>) => void;
-  deleteExpense: (id: string) => void;
-  addMoneyReceived: (m: Omit<MoneyReceived, 'id' | 'createdAt'>) => void;
-  deleteMoneyReceived: (id: string) => void;
-  addBudget: (b: Omit<Budget, 'id' | 'createdAt' | 'spent'>) => void;
-  updateBudget: (id: string, data: Partial<Budget>) => void;
-  deleteBudget: (id: string) => void;
-  addSavedMoneyEntry: (e: Omit<SavedMoneyEntry, 'id' | 'createdAt'>) => void;
-  deleteSavedMoneyEntry: (id: string) => void;
-  addSavingsGoal: (g: Omit<SavingsGoal, 'id' | 'createdAt'>) => void;
-  updateSavingsGoal: (id: string, data: Partial<SavingsGoal>) => void;
-  deleteSavingsGoal: (id: string) => void;
-  addRecurringExpense: (r: Omit<RecurringExpense, 'id' | 'createdAt'>) => void;
-  updateRecurringExpense: (id: string, data: Partial<RecurringExpense>) => void;
-  deleteRecurringExpense: (id: string) => void;
-  updateSettings: (s: Partial<AppSettings>) => void;
+  addExpense: (e: Omit<Expense, 'id' | 'createdAt'>) => Promise<MutResult>;
+  updateExpense: (id: string, data: Partial<Expense>) => Promise<MutResult>;
+  deleteExpense: (id: string) => Promise<MutResult>;
+  addMoneyReceived: (m: Omit<MoneyReceived, 'id' | 'createdAt'>) => Promise<MutResult>;
+  deleteMoneyReceived: (id: string) => Promise<MutResult>;
+  addBudget: (b: Omit<Budget, 'id' | 'createdAt' | 'spent'>) => Promise<MutResult>;
+  updateBudget: (id: string, data: Partial<Budget>) => Promise<MutResult>;
+  deleteBudget: (id: string) => Promise<MutResult>;
+  addSavedMoneyEntry: (e: Omit<SavedMoneyEntry, 'id' | 'createdAt'>) => Promise<MutResult>;
+  deleteSavedMoneyEntry: (id: string) => Promise<MutResult>;
+  addSavingsGoal: (g: Omit<SavingsGoal, 'id' | 'createdAt'>) => Promise<MutResult>;
+  updateSavingsGoal: (id: string, data: Partial<SavingsGoal>) => Promise<MutResult>;
+  deleteSavingsGoal: (id: string) => Promise<MutResult>;
+  addRecurringExpense: (r: Omit<RecurringExpense, 'id' | 'createdAt'>) => Promise<MutResult>;
+  updateRecurringExpense: (id: string, data: Partial<RecurringExpense>) => Promise<MutResult>;
+  deleteRecurringExpense: (id: string) => Promise<MutResult>;
+  updateSettings: (s: Partial<AppSettings>) => Promise<MutResult>;
   getTotalReceived: (month?: string) => number;
   getTotalExpenses: (month?: string) => number;
   getMoneyLeft: (month?: string) => number;
@@ -135,52 +139,36 @@ interface StoreContextType extends StoreData {
 }
 
 const StoreContext = createContext<StoreContextType | null>(null);
-const STORAGE_KEY = 'expensewise-data';
-const LEGACY_KEY = 'expense-tracker-data';
 
-function gid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 function mk(d: string) { return d.slice(0, 7); }
 
-// ===================== LOCAL STORAGE HELPERS =====================
+// Generate a proper UUID v4 for Supabase (schema uses UUID type)
+function newUUID(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback for environments without crypto.randomUUID
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+// ===================== EMPTY STATE =====================
 
 const emptyData: StoreData = {
   expenses: [], moneyReceived: [], budgets: [], savedMoneyEntries: [],
   savingsGoals: [], recurringExpenses: [], settings: { monthlyAllowance: 5000 }
 };
 
-function migrate(): StoreData {
-  const empty = { ...emptyData };
-  if (typeof window === 'undefined') return empty;
-  try {
-    const raw = localStorage.getItem(LEGACY_KEY);
-    if (!raw) return empty;
-    const l = JSON.parse(raw);
-    if (l.transactions) {
-      for (const t of l.transactions) {
-        if (t.type === 'expense') empty.expenses.push({ id: t.id, amount: t.amount, category: t.category, description: t.description, date: t.date, createdAt: t.createdAt });
-        else empty.moneyReceived.push({ id: t.id, amount: t.amount, source: 'Other', date: t.date, note: t.description, createdAt: t.createdAt });
-      }
-    }
-    if (l.budgets) {
-      for (const b of l.budgets) empty.budgets.push({ id: b.id, category: b.category, limit: b.limit, spent: b.spent || 0, period: b.period || 'monthly', createdAt: b.createdAt });
-    }
-    return empty;
-  } catch { return empty; }
-}
-
-function loadLocalData(): StoreData {
-  if (typeof window === 'undefined') return { ...emptyData };
-  try { const r = localStorage.getItem(STORAGE_KEY); if (r) return JSON.parse(r); } catch { /* ignore */ }
-  return migrate();
-}
-
-function saveLocalData(d: StoreData) {
-  if (typeof window !== 'undefined') localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
-}
-
-// ===================== SUPABASE HELPERS =====================
+// ===================== SUPABASE DATA LOADING =====================
 
 async function loadSupabaseData(userId: string): Promise<StoreData> {
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[DB] Loading all data from Supabase for user:', userId);
+  }
+
   const [expensesRes, moneyRes, budgetsRes, savedRes, goalsRes, recurringRes, settingsRes] = await Promise.all([
     supabase.from('expenses').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
     supabase.from('money_received').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
@@ -191,33 +179,51 @@ async function loadSupabaseData(userId: string): Promise<StoreData> {
     supabase.from('app_settings').select('*').eq('user_id', userId).maybeSingle(),
   ]);
 
+  // Log any SELECT errors in development
+  if (process.env.NODE_ENV === 'development') {
+    if (expensesRes.error) console.error('[DB] expenses SELECT error:', expensesRes.error);
+    if (moneyRes.error) console.error('[DB] money_received SELECT error:', moneyRes.error);
+    if (budgetsRes.error) console.error('[DB] budgets SELECT error:', budgetsRes.error);
+    if (savedRes.error) console.error('[DB] saved_money_entries SELECT error:', savedRes.error);
+    if (goalsRes.error) console.error('[DB] savings_goals SELECT error:', goalsRes.error);
+    if (recurringRes.error) console.error('[DB] recurring_expenses SELECT error:', recurringRes.error);
+    if (settingsRes.error) console.error('[DB] app_settings SELECT error:', settingsRes.error);
+    console.log('[DB] Rows loaded — expenses:', expensesRes.data?.length ?? 0,
+      '| money_received:', moneyRes.data?.length ?? 0,
+      '| budgets:', budgetsRes.data?.length ?? 0,
+      '| saved_money_entries:', savedRes.data?.length ?? 0,
+      '| savings_goals:', goalsRes.data?.length ?? 0,
+      '| recurring_expenses:', recurringRes.data?.length ?? 0,
+      '| settings:', settingsRes.data ? 'found' : 'not found');
+  }
+
   return {
     expenses: (expensesRes.data || []).map(e => ({
-      id: e.id, amount: e.amount, category: e.category,
+      id: e.id, amount: Number(e.amount), category: e.category,
       description: e.description, date: e.date, createdAt: e.created_at,
     })),
     moneyReceived: (moneyRes.data || []).map(m => ({
-      id: m.id, amount: m.amount, source: m.source,
+      id: m.id, amount: Number(m.amount), source: m.source,
       date: m.date, note: m.note, createdAt: m.created_at,
     })),
     budgets: (budgetsRes.data || []).map(b => ({
-      id: b.id, category: b.category, limit: b.limit,
-      spent: b.spent, period: b.period, createdAt: b.created_at,
+      id: b.id, category: b.category, limit: Number(b.limit),
+      spent: Number(b.spent), period: b.period, createdAt: b.created_at,
     })),
     savedMoneyEntries: (savedRes.data || []).map(s => ({
-      id: s.id, amount: s.amount, type: s.type,
+      id: s.id, amount: Number(s.amount), type: s.type,
       date: s.date, note: s.note, createdAt: s.created_at,
     })),
     savingsGoals: (goalsRes.data || []).map(g => ({
-      id: g.id, name: g.name, target: g.target,
-      current: g.current, deadline: g.deadline || '', createdAt: g.created_at,
+      id: g.id, name: g.name, target: Number(g.target),
+      current: Number(g.current), deadline: g.deadline || '', createdAt: g.created_at,
     })),
     recurringExpenses: (recurringRes.data || []).map(r => ({
-      id: r.id, name: r.name, amount: r.amount,
+      id: r.id, name: r.name, amount: Number(r.amount),
       category: r.category, frequency: r.frequency, createdAt: r.created_at,
     })),
     settings: settingsRes.data
-      ? { monthlyAllowance: settingsRes.data.monthly_allowance }
+      ? { monthlyAllowance: Number(settingsRes.data.monthly_allowance) }
       : { monthlyAllowance: 5000 },
   };
 }
@@ -230,300 +236,352 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [loaded, setLoaded] = useState(false);
   const [isUsingCloud, setIsUsingCloud] = useState(false);
 
-  // Load data once auth has resolved
+  // Track which user we last loaded for — clears data on logout or user switch
+  const loadedForUserRef = useRef<string | null>(null);
+
+  // Load data once auth resolves. Re-runs if user changes (login/logout/switch).
   useEffect(() => {
-    // Don't do anything until AuthProvider has finished its getSession() call.
-    // Without this guard, init() fires with user=null immediately on mount,
-    // loads empty localStorage data, and races against the real session restore.
+    // Don't run until AuthProvider has finished its async getSession() call.
     if (authLoading) return;
 
     async function init() {
       if (process.env.NODE_ENV === 'development') {
-        console.log('[AUTH] user id:', user?.id ?? 'null');
+        console.log('[AUTH] user id after auth resolved:', user?.id ?? 'null (logged out)');
       }
+
       if (user) {
+        // Only reload if the user actually changed
+        if (loadedForUserRef.current === user.id && loaded) return;
+        loadedForUserRef.current = user.id;
+
         try {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('[MONEY] loading from Supabase for user:', user.id);
-          }
           const cloudData = await loadSupabaseData(user.id);
-          if (process.env.NODE_ENV === 'development') {
-            console.log('[MONEY] rows returned — money_received:', cloudData.moneyReceived.length,
-              '| expenses:', cloudData.expenses.length,
-              '| budgets:', cloudData.budgets.length,
-              '| savings goals:', cloudData.savingsGoals.length,
-              '| saved money entries:', cloudData.savedMoneyEntries.length,
-              '| recurring expenses:', cloudData.recurringExpenses.length);
-          }
           setData(cloudData);
           setIsUsingCloud(true);
+          setLoaded(true);
         } catch (err) {
           if (process.env.NODE_ENV === 'development') {
-            console.error('[MONEY] load error — falling back to localStorage:', err);
+            console.error('[DB] Failed to load from Supabase:', err);
           }
-          // Fallback to local storage
-          setData(loadLocalData());
+          // Don't fall back to localStorage — surface the failure so it's visible
+          setData({ ...emptyData });
           setIsUsingCloud(false);
+          setLoaded(true);
         }
       } else {
-        setData(loadLocalData());
-        setIsUsingCloud(false);
+        // User logged out — clear all financial data immediately
+        if (loadedForUserRef.current !== null) {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[AUTH] User logged out. Clearing application data.');
+          }
+          loadedForUserRef.current = null;
+          setData({ ...emptyData });
+          setIsUsingCloud(false);
+          setLoaded(true);
+        } else {
+          // First load, not logged in — still mark as loaded so AuthGuard works
+          setLoaded(true);
+        }
       }
-      setLoaded(true);
     }
+
     init();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading]);
 
-  // Save to localStorage only when NOT using cloud, to avoid overwriting
-  // Supabase-loaded state with stale/empty local data during auth race conditions.
-  useEffect(() => {
-    if (loaded && !isUsingCloud) saveLocalData(data);
-  }, [data, loaded, isUsingCloud]);
-
   // ===================== EXPENSES =====================
-  const addExpense = useCallback((expense: Omit<Expense, 'id' | 'createdAt'>) => {
-    const id = gid();
+
+  const addExpense = useCallback(async (expense: Omit<Expense, 'id' | 'createdAt'>): Promise<MutResult> => {
+    if (!user) return { error: 'Not authenticated' };
+    const id = newUUID();
     const createdAt = new Date().toISOString();
-    setData(p => ({ ...p, expenses: [...p.expenses, { ...expense, id, createdAt }] }));
-    if (user) {
-      if (process.env.NODE_ENV === 'development') console.log('[EXPENSE] inserting:', expense.amount);
-      supabase.from('expenses').insert({
-        id, user_id: user.id, amount: expense.amount,
-        category: expense.category, description: expense.description,
-        date: expense.date, created_at: createdAt,
-      }).then(({ error }) => {
-        if (process.env.NODE_ENV === 'development') {
-          if (error) console.error('[EXPENSE] insert error:', error);
-          else console.log('[EXPENSE] insert success');
-        }
-      });
+    if (process.env.NODE_ENV === 'development') console.log('[EXPENSE] inserting:', expense.amount);
+
+    const { error } = await supabase.from('expenses').insert({
+      id, user_id: user.id, amount: expense.amount,
+      category: expense.category, description: expense.description,
+      date: expense.date, created_at: createdAt,
+    });
+
+    if (error) {
+      if (process.env.NODE_ENV === 'development') console.error('[EXPENSE] insert error:', error);
+      return { error: error.message };
     }
+    if (process.env.NODE_ENV === 'development') console.log('[EXPENSE] insert success');
+    setData(p => ({ ...p, expenses: [{ ...expense, id, createdAt }, ...p.expenses] }));
+    return {};
   }, [user]);
 
-  const updateExpense = useCallback((id: string, d: Partial<Expense>) => {
+  const updateExpense = useCallback(async (id: string, d: Partial<Expense>): Promise<MutResult> => {
+    if (!user) return { error: 'Not authenticated' };
+    const update: Record<string, unknown> = {};
+    if (d.amount !== undefined) update.amount = d.amount;
+    if (d.category !== undefined) update.category = d.category;
+    if (d.description !== undefined) update.description = d.description;
+    if (d.date !== undefined) update.date = d.date;
+
+    const { error } = await supabase.from('expenses').update(update).eq('id', id);
+    if (error) {
+      if (process.env.NODE_ENV === 'development') console.error('[EXPENSE] update error:', error);
+      return { error: error.message };
+    }
     setData(p => ({ ...p, expenses: p.expenses.map(e => e.id === id ? { ...e, ...d } : e) }));
-    if (user) {
-      const update: Record<string, unknown> = {};
-      if (d.amount !== undefined) update.amount = d.amount;
-      if (d.category !== undefined) update.category = d.category;
-      if (d.description !== undefined) update.description = d.description;
-      if (d.date !== undefined) update.date = d.date;
-      supabase.from('expenses').update(update).eq('id', id).then(({ error }) => {
-        if (error) console.error('Supabase update error:', error);
-      });
-    }
+    return {};
   }, [user]);
 
-  const deleteExpense = useCallback((id: string) => {
-    setData(p => ({ ...p, expenses: p.expenses.filter(e => e.id !== id) }));
-    if (user) {
-      supabase.from('expenses').delete().eq('id', id).then(({ error }) => {
-        if (error) console.error('Supabase delete error:', error);
-      });
+  const deleteExpense = useCallback(async (id: string): Promise<MutResult> => {
+    if (!user) return { error: 'Not authenticated' };
+    const { error } = await supabase.from('expenses').delete().eq('id', id);
+    if (error) {
+      if (process.env.NODE_ENV === 'development') console.error('[EXPENSE] delete error:', error);
+      return { error: error.message };
     }
+    setData(p => ({ ...p, expenses: p.expenses.filter(e => e.id !== id) }));
+    return {};
   }, [user]);
 
   // ===================== MONEY RECEIVED =====================
-  const addMoneyReceived = useCallback((m: Omit<MoneyReceived, 'id' | 'createdAt'>) => {
-    const id = gid();
+
+  const addMoneyReceived = useCallback(async (m: Omit<MoneyReceived, 'id' | 'createdAt'>): Promise<MutResult> => {
+    if (!user) return { error: 'Not authenticated' };
+    const id = newUUID();
     const createdAt = new Date().toISOString();
-    setData(p => ({ ...p, moneyReceived: [...p.moneyReceived, { ...m, id, createdAt }] }));
-    if (user) {
-      if (process.env.NODE_ENV === 'development') console.log('[MONEY] inserting:', m.amount);
-      supabase.from('money_received').insert({
-        id, user_id: user.id, amount: m.amount,
-        source: m.source, date: m.date, note: m.note, created_at: createdAt,
-      }).then(({ error }) => {
-        if (process.env.NODE_ENV === 'development') {
-          if (error) console.error('[MONEY] insert error:', error);
-          else console.log('[MONEY] insert success');
-        }
-      });
+    if (process.env.NODE_ENV === 'development') console.log('[MONEY] inserting:', m.amount);
+
+    const { error } = await supabase.from('money_received').insert({
+      id, user_id: user.id, amount: m.amount,
+      source: m.source, date: m.date, note: m.note, created_at: createdAt,
+    });
+
+    if (error) {
+      if (process.env.NODE_ENV === 'development') console.error('[MONEY] insert error:', error);
+      return { error: error.message };
     }
+    if (process.env.NODE_ENV === 'development') console.log('[MONEY] insert success');
+    setData(p => ({ ...p, moneyReceived: [{ ...m, id, createdAt }, ...p.moneyReceived] }));
+    return {};
   }, [user]);
 
-  const deleteMoneyReceived = useCallback((id: string) => {
-    setData(p => ({ ...p, moneyReceived: p.moneyReceived.filter(m => m.id !== id) }));
-    if (user) {
-      supabase.from('money_received').delete().eq('id', id).then(({ error }) => {
-        if (error) console.error('Supabase delete error:', error);
-      });
+  const deleteMoneyReceived = useCallback(async (id: string): Promise<MutResult> => {
+    if (!user) return { error: 'Not authenticated' };
+    const { error } = await supabase.from('money_received').delete().eq('id', id);
+    if (error) {
+      if (process.env.NODE_ENV === 'development') console.error('[MONEY] delete error:', error);
+      return { error: error.message };
     }
+    setData(p => ({ ...p, moneyReceived: p.moneyReceived.filter(x => x.id !== id) }));
+    return {};
   }, [user]);
 
   // ===================== BUDGETS =====================
-  const addBudget = useCallback((b: Omit<Budget, 'id' | 'createdAt' | 'spent'>) => {
-    const id = gid();
+
+  const addBudget = useCallback(async (b: Omit<Budget, 'id' | 'createdAt' | 'spent'>): Promise<MutResult> => {
+    if (!user) return { error: 'Not authenticated' };
+    const id = newUUID();
     const createdAt = new Date().toISOString();
-    setData(p => ({ ...p, budgets: [...p.budgets, { ...b, id, createdAt, spent: 0 }] }));
-    if (user) {
-      if (process.env.NODE_ENV === 'development') console.log('[BUDGET] inserting:', b.category);
-      supabase.from('budgets').insert({
-        id, user_id: user.id, category: b.category,
-        limit: b.limit, spent: 0, period: b.period, created_at: createdAt,
-      }).then(({ error }) => {
-        if (process.env.NODE_ENV === 'development') {
-          if (error) console.error('[BUDGET] insert error:', error);
-          else console.log('[BUDGET] insert success');
-        }
-      });
+    if (process.env.NODE_ENV === 'development') console.log('[BUDGET] inserting:', b.category);
+
+    const { error } = await supabase.from('budgets').insert({
+      id, user_id: user.id, category: b.category,
+      limit: b.limit, spent: 0, period: b.period, created_at: createdAt,
+    });
+
+    if (error) {
+      if (process.env.NODE_ENV === 'development') console.error('[BUDGET] insert error:', error);
+      return { error: error.message };
     }
+    if (process.env.NODE_ENV === 'development') console.log('[BUDGET] insert success');
+    setData(p => ({ ...p, budgets: [{ ...b, id, createdAt, spent: 0 }, ...p.budgets] }));
+    return {};
   }, [user]);
 
-  const updateBudget = useCallback((id: string, d: Partial<Budget>) => {
+  const updateBudget = useCallback(async (id: string, d: Partial<Budget>): Promise<MutResult> => {
+    if (!user) return { error: 'Not authenticated' };
+    const update: Record<string, unknown> = {};
+    if (d.limit !== undefined) update.limit = d.limit;
+    if (d.spent !== undefined) update.spent = d.spent;
+    if (d.period !== undefined) update.period = d.period;
+    if (d.category !== undefined) update.category = d.category;
+
+    const { error } = await supabase.from('budgets').update(update).eq('id', id);
+    if (error) {
+      if (process.env.NODE_ENV === 'development') console.error('[BUDGET] update error:', error);
+      return { error: error.message };
+    }
     setData(p => ({ ...p, budgets: p.budgets.map(b => b.id === id ? { ...b, ...d } : b) }));
-    if (user) {
-      const update: Record<string, unknown> = {};
-      if (d.limit !== undefined) update.limit = d.limit;
-      if (d.spent !== undefined) update.spent = d.spent;
-      if (d.period !== undefined) update.period = d.period;
-      if (d.category !== undefined) update.category = d.category;
-      supabase.from('budgets').update(update).eq('id', id).then(({ error }) => {
-        if (error) console.error('Supabase update error:', error);
-      });
-    }
+    return {};
   }, [user]);
 
-  const deleteBudget = useCallback((id: string) => {
-    setData(p => ({ ...p, budgets: p.budgets.filter(b => b.id !== id) }));
-    if (user) {
-      supabase.from('budgets').delete().eq('id', id).then(({ error }) => {
-        if (error) console.error('Supabase delete error:', error);
-      });
+  const deleteBudget = useCallback(async (id: string): Promise<MutResult> => {
+    if (!user) return { error: 'Not authenticated' };
+    const { error } = await supabase.from('budgets').delete().eq('id', id);
+    if (error) {
+      if (process.env.NODE_ENV === 'development') console.error('[BUDGET] delete error:', error);
+      return { error: error.message };
     }
+    setData(p => ({ ...p, budgets: p.budgets.filter(b => b.id !== id) }));
+    return {};
   }, [user]);
 
   // ===================== SAVED MONEY =====================
-  const addSavedMoneyEntry = useCallback((entry: Omit<SavedMoneyEntry, 'id' | 'createdAt'>) => {
+
+  const addSavedMoneyEntry = useCallback(async (entry: Omit<SavedMoneyEntry, 'id' | 'createdAt'>): Promise<MutResult> => {
+    if (!user) return { error: 'Not authenticated' };
     if (entry.type === 'remove') {
       const cur = data.savedMoneyEntries.reduce((s, e) => e.type === 'add' ? s + e.amount : s - e.amount, 0);
-      if (entry.amount > cur) return;
+      if (entry.amount > cur) return { error: 'Cannot remove more than current saved amount' };
     }
-    const id = gid();
+    const id = newUUID();
     const createdAt = new Date().toISOString();
-    setData(p => ({ ...p, savedMoneyEntries: [...p.savedMoneyEntries, { ...entry, id, createdAt }] }));
-    if (user) {
-      if (process.env.NODE_ENV === 'development') console.log('[SAVED] inserting:', entry.type, entry.amount);
-      supabase.from('saved_money_entries').insert({
-        id, user_id: user.id, amount: entry.amount,
-        type: entry.type, date: entry.date, note: entry.note, created_at: createdAt,
-      }).then(({ error }) => {
-        if (process.env.NODE_ENV === 'development') {
-          if (error) console.error('[SAVED] insert error:', error);
-          else console.log('[SAVED] insert success');
-        }
-      });
-    }
-  }, [data.savedMoneyEntries, user]);
+    if (process.env.NODE_ENV === 'development') console.log('[SAVED] inserting:', entry.type, entry.amount);
 
-  const deleteSavedMoneyEntry = useCallback((id: string) => {
-    setData(p => ({ ...p, savedMoneyEntries: p.savedMoneyEntries.filter(e => e.id !== id) }));
-    if (user) {
-      supabase.from('saved_money_entries').delete().eq('id', id).then(({ error }) => {
-        if (error) console.error('Supabase delete error:', error);
-      });
+    const { error } = await supabase.from('saved_money_entries').insert({
+      id, user_id: user.id, amount: entry.amount,
+      type: entry.type, date: entry.date, note: entry.note, created_at: createdAt,
+    });
+
+    if (error) {
+      if (process.env.NODE_ENV === 'development') console.error('[SAVED] insert error:', error);
+      return { error: error.message };
     }
+    if (process.env.NODE_ENV === 'development') console.log('[SAVED] insert success');
+    setData(p => ({ ...p, savedMoneyEntries: [{ ...entry, id, createdAt }, ...p.savedMoneyEntries] }));
+    return {};
+  }, [user, data.savedMoneyEntries]);
+
+  const deleteSavedMoneyEntry = useCallback(async (id: string): Promise<MutResult> => {
+    if (!user) return { error: 'Not authenticated' };
+    const { error } = await supabase.from('saved_money_entries').delete().eq('id', id);
+    if (error) {
+      if (process.env.NODE_ENV === 'development') console.error('[SAVED] delete error:', error);
+      return { error: error.message };
+    }
+    setData(p => ({ ...p, savedMoneyEntries: p.savedMoneyEntries.filter(e => e.id !== id) }));
+    return {};
   }, [user]);
 
   // ===================== SAVINGS GOALS =====================
-  const addSavingsGoal = useCallback((g: Omit<SavingsGoal, 'id' | 'createdAt'>) => {
-    const id = gid();
+
+  const addSavingsGoal = useCallback(async (g: Omit<SavingsGoal, 'id' | 'createdAt'>): Promise<MutResult> => {
+    if (!user) return { error: 'Not authenticated' };
+    const id = newUUID();
     const createdAt = new Date().toISOString();
-    setData(p => ({ ...p, savingsGoals: [...p.savingsGoals, { ...g, id, createdAt }] }));
-    if (user) {
-      if (process.env.NODE_ENV === 'development') console.log('[GOAL] inserting:', g.name);
-      supabase.from('savings_goals').insert({
-        id, user_id: user.id, name: g.name, target: g.target,
-        current: g.current, deadline: g.deadline || null, created_at: createdAt,
-      }).then(({ error }) => {
-        if (process.env.NODE_ENV === 'development') {
-          if (error) console.error('[GOAL] insert error:', error);
-          else console.log('[GOAL] insert success');
-        }
-      });
+    if (process.env.NODE_ENV === 'development') console.log('[GOAL] inserting:', g.name);
+
+    const { error } = await supabase.from('savings_goals').insert({
+      id, user_id: user.id, name: g.name, target: g.target,
+      current: g.current, deadline: g.deadline || null, created_at: createdAt,
+    });
+
+    if (error) {
+      if (process.env.NODE_ENV === 'development') console.error('[GOAL] insert error:', error);
+      return { error: error.message };
     }
+    if (process.env.NODE_ENV === 'development') console.log('[GOAL] insert success');
+    setData(p => ({ ...p, savingsGoals: [{ ...g, id, createdAt }, ...p.savingsGoals] }));
+    return {};
   }, [user]);
 
-  const updateSavingsGoal = useCallback((id: string, d: Partial<SavingsGoal>) => {
+  const updateSavingsGoal = useCallback(async (id: string, d: Partial<SavingsGoal>): Promise<MutResult> => {
+    if (!user) return { error: 'Not authenticated' };
+    const update: Record<string, unknown> = {};
+    if (d.name !== undefined) update.name = d.name;
+    if (d.target !== undefined) update.target = d.target;
+    if (d.current !== undefined) update.current = d.current;
+    if (d.deadline !== undefined) update.deadline = d.deadline || null;
+
+    const { error } = await supabase.from('savings_goals').update(update).eq('id', id);
+    if (error) {
+      if (process.env.NODE_ENV === 'development') console.error('[GOAL] update error:', error);
+      return { error: error.message };
+    }
     setData(p => ({ ...p, savingsGoals: p.savingsGoals.map(g => g.id === id ? { ...g, ...d } : g) }));
-    if (user) {
-      const update: Record<string, unknown> = {};
-      if (d.name !== undefined) update.name = d.name;
-      if (d.target !== undefined) update.target = d.target;
-      if (d.current !== undefined) update.current = d.current;
-      if (d.deadline !== undefined) update.deadline = d.deadline || null;
-      supabase.from('savings_goals').update(update).eq('id', id).then(({ error }) => {
-        if (error) console.error('Supabase update error:', error);
-      });
-    }
+    return {};
   }, [user]);
 
-  const deleteSavingsGoal = useCallback((id: string) => {
-    setData(p => ({ ...p, savingsGoals: p.savingsGoals.filter(g => g.id !== id) }));
-    if (user) {
-      supabase.from('savings_goals').delete().eq('id', id).then(({ error }) => {
-        if (error) console.error('Supabase delete error:', error);
-      });
+  const deleteSavingsGoal = useCallback(async (id: string): Promise<MutResult> => {
+    if (!user) return { error: 'Not authenticated' };
+    const { error } = await supabase.from('savings_goals').delete().eq('id', id);
+    if (error) {
+      if (process.env.NODE_ENV === 'development') console.error('[GOAL] delete error:', error);
+      return { error: error.message };
     }
+    setData(p => ({ ...p, savingsGoals: p.savingsGoals.filter(g => g.id !== id) }));
+    return {};
   }, [user]);
 
   // ===================== RECURRING EXPENSES =====================
-  const addRecurringExpense = useCallback((r: Omit<RecurringExpense, 'id' | 'createdAt'>) => {
-    const id = gid();
+
+  const addRecurringExpense = useCallback(async (r: Omit<RecurringExpense, 'id' | 'createdAt'>): Promise<MutResult> => {
+    if (!user) return { error: 'Not authenticated' };
+    const id = newUUID();
     const createdAt = new Date().toISOString();
-    setData(p => ({ ...p, recurringExpenses: [...p.recurringExpenses, { ...r, id, createdAt }] }));
-    if (user) {
-      if (process.env.NODE_ENV === 'development') console.log('[RECURRING] inserting:', r.name);
-      supabase.from('recurring_expenses').insert({
-        id, user_id: user.id, name: r.name, amount: r.amount,
-        category: r.category, frequency: r.frequency, created_at: createdAt,
-      }).then(({ error }) => {
-        if (process.env.NODE_ENV === 'development') {
-          if (error) console.error('[RECURRING] insert error:', error);
-          else console.log('[RECURRING] insert success');
-        }
-      });
+    if (process.env.NODE_ENV === 'development') console.log('[RECURRING] inserting:', r.name);
+
+    const { error } = await supabase.from('recurring_expenses').insert({
+      id, user_id: user.id, name: r.name, amount: r.amount,
+      category: r.category, frequency: r.frequency, created_at: createdAt,
+    });
+
+    if (error) {
+      if (process.env.NODE_ENV === 'development') console.error('[RECURRING] insert error:', error);
+      return { error: error.message };
     }
+    if (process.env.NODE_ENV === 'development') console.log('[RECURRING] insert success');
+    setData(p => ({ ...p, recurringExpenses: [{ ...r, id, createdAt }, ...p.recurringExpenses] }));
+    return {};
   }, [user]);
 
-  const updateRecurringExpense = useCallback((id: string, d: Partial<RecurringExpense>) => {
+  const updateRecurringExpense = useCallback(async (id: string, d: Partial<RecurringExpense>): Promise<MutResult> => {
+    if (!user) return { error: 'Not authenticated' };
+    const update: Record<string, unknown> = {};
+    if (d.name !== undefined) update.name = d.name;
+    if (d.amount !== undefined) update.amount = d.amount;
+    if (d.category !== undefined) update.category = d.category;
+    if (d.frequency !== undefined) update.frequency = d.frequency;
+
+    const { error } = await supabase.from('recurring_expenses').update(update).eq('id', id);
+    if (error) {
+      if (process.env.NODE_ENV === 'development') console.error('[RECURRING] update error:', error);
+      return { error: error.message };
+    }
     setData(p => ({ ...p, recurringExpenses: p.recurringExpenses.map(r => r.id === id ? { ...r, ...d } : r) }));
-    if (user) {
-      const update: Record<string, unknown> = {};
-      if (d.name !== undefined) update.name = d.name;
-      if (d.amount !== undefined) update.amount = d.amount;
-      if (d.category !== undefined) update.category = d.category;
-      if (d.frequency !== undefined) update.frequency = d.frequency;
-      supabase.from('recurring_expenses').update(update).eq('id', id).then(({ error }) => {
-        if (error) console.error('Supabase update error:', error);
-      });
-    }
+    return {};
   }, [user]);
 
-  const deleteRecurringExpense = useCallback((id: string) => {
-    setData(p => ({ ...p, recurringExpenses: p.recurringExpenses.filter(r => r.id !== id) }));
-    if (user) {
-      supabase.from('recurring_expenses').delete().eq('id', id).then(({ error }) => {
-        if (error) console.error('Supabase delete error:', error);
-      });
+  const deleteRecurringExpense = useCallback(async (id: string): Promise<MutResult> => {
+    if (!user) return { error: 'Not authenticated' };
+    const { error } = await supabase.from('recurring_expenses').delete().eq('id', id);
+    if (error) {
+      if (process.env.NODE_ENV === 'development') console.error('[RECURRING] delete error:', error);
+      return { error: error.message };
     }
+    setData(p => ({ ...p, recurringExpenses: p.recurringExpenses.filter(r => r.id !== id) }));
+    return {};
   }, [user]);
 
   // ===================== SETTINGS =====================
-  const updateSettings = useCallback((s: Partial<AppSettings>) => {
-    setData(p => ({ ...p, settings: { ...p.settings, ...s } }));
-    if (user) {
-      supabase.from('app_settings').upsert({
-        user_id: user.id,
-        monthly_allowance: s.monthlyAllowance ?? data.settings.monthlyAllowance,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id' }).then(({ error }) => {
-        if (error) console.error('Supabase upsert error:', error);
-      });
+
+  const updateSettings = useCallback(async (s: Partial<AppSettings>): Promise<MutResult> => {
+    if (!user) return { error: 'Not authenticated' };
+    const newAllowance = s.monthlyAllowance ?? data.settings.monthlyAllowance;
+
+    const { error } = await supabase.from('app_settings').upsert({
+      user_id: user.id,
+      monthly_allowance: newAllowance,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id' });
+
+    if (error) {
+      if (process.env.NODE_ENV === 'development') console.error('[SETTINGS] upsert error:', error);
+      return { error: error.message };
     }
+    setData(p => ({ ...p, settings: { ...p.settings, ...s } }));
+    return {};
   }, [user, data.settings.monthlyAllowance]);
 
   // ===================== COMPUTED VALUES =====================
+
   const getTotalReceived = useCallback((month?: string) => {
     const m = month || mk(new Date().toISOString().slice(0, 10));
     return data.moneyReceived.filter(x => mk(x.date) === m).reduce((s, x) => s + x.amount, 0);

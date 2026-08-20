@@ -17,18 +17,25 @@ export default function RecurringExpensesPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: '', amount: '', category: 'Subscriptions', frequency: 'monthly' as 'monthly' | 'weekly' | 'yearly' });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const resetForm = () => { setForm({ name: '', amount: '', category: 'Subscriptions', frequency: 'monthly' }); setShowForm(false); setEditingId(null); };
+  const resetForm = () => { setForm({ name: '', amount: '', category: 'Subscriptions', frequency: 'monthly' }); setShowForm(false); setEditingId(null); setSubmitError(null); };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const amt = parseFloat(form.amount);
     if (!form.name.trim() || !amt || amt <= 0) return;
+    setSubmitting(true);
+    setSubmitError(null);
+    let result;
     if (editingId) {
-      updateRecurringExpense(editingId, { name: form.name, amount: amt, category: form.category, frequency: form.frequency });
+      result = await updateRecurringExpense(editingId, { name: form.name, amount: amt, category: form.category, frequency: form.frequency });
     } else {
-      addRecurringExpense({ name: form.name, amount: amt, category: form.category, frequency: form.frequency });
+      result = await addRecurringExpense({ name: form.name, amount: amt, category: form.category, frequency: form.frequency });
     }
+    setSubmitting(false);
+    if (result.error) { setSubmitError(result.error); return; }
     resetForm();
   };
 
@@ -97,8 +104,9 @@ export default function RecurringExpensesPage() {
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={resetForm} className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-95 transition-all">Cancel</button>
-                <button type="submit" className="flex-1 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 active:scale-95 transition-all">{editingId ? 'Update' : 'Add'}</button>
+                <button type="submit" disabled={submitting} className="flex-1 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 active:scale-95 transition-all disabled:opacity-60">{submitting ? 'Saving…' : editingId ? 'Update' : 'Add'}</button>
               </div>
+              {submitError && <p className="text-sm text-red-600 dark:text-red-400 text-center">{submitError}</p>}
             </form>
           </div>
         </div>

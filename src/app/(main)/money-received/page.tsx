@@ -13,14 +13,20 @@ export default function MoneyReceivedPage() {
   const [showForm, setShowForm] = useState(false);
   const [month, setMonth] = useState(getMonthKey(new Date().toISOString().slice(0, 10)));
   const [form, setForm] = useState({ amount: '', source: 'Parents', date: new Date().toISOString().slice(0, 10), note: '' });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const resetForm = () => { setForm({ amount: '', source: 'Parents', date: new Date().toISOString().slice(0, 10), note: '' }); setShowForm(false); };
+  const resetForm = () => { setForm({ amount: '', source: 'Parents', date: new Date().toISOString().slice(0, 10), note: '' }); setShowForm(false); setSubmitError(null); };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const amt = parseFloat(form.amount);
     if (!amt || amt <= 0) return;
-    addMoneyReceived({ amount: amt, source: form.source, date: form.date, note: form.note });
+    setSubmitting(true);
+    setSubmitError(null);
+    const result = await addMoneyReceived({ amount: amt, source: form.source, date: form.date, note: form.note });
+    setSubmitting(false);
+    if (result.error) { setSubmitError(result.error); return; }
     resetForm();
   };
 
@@ -94,8 +100,9 @@ export default function MoneyReceivedPage() {
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={resetForm} className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-95 transition-all">Cancel</button>
-                <button type="submit" className="flex-1 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 active:scale-95 transition-all">Add Money</button>
+                <button type="submit" disabled={submitting} className="flex-1 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 active:scale-95 transition-all disabled:opacity-60">{submitting ? 'Saving…' : 'Add Money'}</button>
               </div>
+              {submitError && <p className="text-sm text-red-600 dark:text-red-400 text-center">{submitError}</p>}
             </form>
           </div>
         </div>
