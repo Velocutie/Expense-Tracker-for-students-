@@ -3,25 +3,36 @@
 import { useState } from 'react';
 import { useStore } from '@/lib/store';
 import { EXPENSE_CATEGORIES } from '@/lib/store';
-import { Plus, Trash2, X } from 'lucide-react';
+import { Plus, Trash2, X, Pencil } from 'lucide-react';
 import { Tip } from '@/components/Tip';
 
 function getMonthKey(d: string) { return d.slice(0, 7); }
 
 export default function ExpensesPage() {
-  const { expenses, addExpense, deleteExpense } = useStore();
+  const { expenses, addExpense, updateExpense, deleteExpense } = useStore();
   const [showForm, setShowForm] = useState(false);
   const [month, setMonth] = useState(getMonthKey(new Date().toISOString().slice(0, 10)));
   const [form, setForm] = useState({ amount: '', category: 'Food & Drinks', description: '', date: new Date().toISOString().slice(0, 10) });
+  const [editingId, setEditingId] = useState<string | null>(null);
 
-  const resetForm = () => { setForm({ amount: '', category: 'Food & Drinks', description: '', date: new Date().toISOString().slice(0, 10) }); setShowForm(false); };
+  const resetForm = () => { setForm({ amount: '', category: 'Food & Drinks', description: '', date: new Date().toISOString().slice(0, 10) }); setShowForm(false); setEditingId(null); };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const amt = parseFloat(form.amount);
     if (!amt || amt <= 0) return;
-    addExpense({ amount: amt, category: form.category, description: form.description, date: form.date });
+    if (editingId) {
+      updateExpense(editingId, { amount: amt, category: form.category, description: form.description, date: form.date });
+    } else {
+      addExpense({ amount: amt, category: form.category, description: form.description, date: form.date });
+    }
     resetForm();
+  };
+
+  const handleEdit = (ex: { id: string; amount: number; category: string; description: string; date: string }) => {
+    setForm({ amount: ex.amount.toString(), category: ex.category, description: ex.description, date: ex.date });
+    setEditingId(ex.id);
+    setShowForm(true);
   };
 
   const filtered = expenses.filter(e => getMonthKey(e.date) === month).sort((a, b) => b.date.localeCompare(a.date));
@@ -62,7 +73,7 @@ export default function ExpensesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl border border-gray-100 dark:border-gray-700">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Add Expense</h2>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">{editingId ? 'Edit Expense' : 'Add Expense'}</h2>
               <button onClick={resetForm} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg active:scale-90 transition-all"><X size={18} /></button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -94,7 +105,7 @@ export default function ExpensesPage() {
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={resetForm} className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-95 transition-all">Cancel</button>
-                <button type="submit" className="flex-1 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 active:scale-95 transition-all">Add Expense</button>
+                <button type="submit" className="flex-1 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 active:scale-95 transition-all">{editingId ? 'Update' : 'Add Expense'}</button>
               </div>
             </form>
           </div>
@@ -117,7 +128,10 @@ export default function ExpensesPage() {
                     <p className="text-xs text-gray-500 dark:text-gray-400">{e.category} &bull; {e.date}</p>
                   </div>
                   <p className="text-sm font-semibold text-red-600 dark:text-red-400 shrink-0">-{'\u20B9'}{e.amount.toLocaleString('en-IN')}</p>
-                  <button onClick={() => deleteExpense(e.id)} className="p-2 rounded-lg text-gray-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 shrink-0 transition-all active:scale-90" aria-label="Delete expense"><Trash2 size={14} /></button>
+                  <div className="flex gap-1 shrink-0">
+                    <button onClick={() => handleEdit(e)} className="p-2 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300 transition-all active:scale-90" aria-label="Edit expense"><Pencil size={14} /></button>
+                    <button onClick={() => deleteExpense(e.id)} className="p-2 rounded-lg text-gray-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 transition-all active:scale-90" aria-label="Delete expense"><Trash2 size={14} /></button>
+                  </div>
                 </div>
               );
             })}

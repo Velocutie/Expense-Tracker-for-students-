@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ReceiptIndianRupee, CircleDollarSign, PiggyBank, Target, BarChart3, Menu, X, User, Sun, Moon, Monitor } from 'lucide-react';
+import { LayoutDashboard, ReceiptIndianRupee, CircleDollarSign, PiggyBank, Target, BarChart3, Menu, X, User, Sun, Moon, Monitor, Repeat } from 'lucide-react';
 import { useState } from 'react';
 import { useTheme } from '@/lib/theme';
+import { useAuth } from '@/lib/auth';
 
 const NAV_ITEMS = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -13,6 +14,7 @@ const NAV_ITEMS = [
   { href: '/saved-money', label: 'Saved Money', icon: PiggyBank },
   { href: '/budgets', label: 'Budgets', icon: Target },
   { href: '/savings-goals', label: 'Savings Goals', icon: Target },
+  { href: '/recurring-expenses', label: 'Recurring', icon: Repeat },
   { href: '/insights', label: 'Insights', icon: BarChart3 },
   { href: '/profile', label: 'Profile', icon: User },
 ];
@@ -35,6 +37,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { theme, setTheme } = useTheme();
+  const { user } = useAuth();
 
   const navContent = (
     <>
@@ -94,10 +97,19 @@ export function Sidebar() {
       </div>
 
       <div className="p-4 border-t border-gray-100 dark:border-gray-800">
-        <div className="rounded-xl bg-gray-50 dark:bg-gray-800 p-4">
-          <p className="text-xs text-gray-500 dark:text-gray-400">ExpenseWise v1.0</p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Track your money smarter</p>
-        </div>
+        <Link
+          href="/profile"
+          onClick={() => setMobileOpen(false)}
+          className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-all active:scale-[0.98] cursor-pointer"
+        >
+          <div className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-500/10 flex items-center justify-center shrink-0">
+            <User size={18} className="text-indigo-600 dark:text-indigo-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{user?.name || 'User'}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email || 'Not signed in'}</p>
+          </div>
+        </Link>
       </div>
     </>
   );

@@ -69,6 +69,18 @@ export interface Database {
         };
         Insert: Omit<{ id: string; user_id: string; created_at: string }, 'id' | 'created_at'>;
       };
+      recurring_expenses: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          amount: number;
+          category: string;
+          frequency: 'monthly' | 'weekly' | 'yearly';
+          created_at: string;
+        };
+        Insert: Omit<{ id: string; user_id: string; created_at: string }, 'id' | 'created_at'>;
+      };
       app_settings: {
         Row: {
           user_id: string;

@@ -1,288 +1,153 @@
 # ExpenseWise — Project Context
 
-> **Last Updated:** August 20, 2026  
-> **Project Root:** `D:\AKSHATSEX\Accounts`
-
----
-
 ## Overview
-
-ExpenseWise is a personal finance tracking web application built for college students living away from home. It tracks expenses, money received, savings goals, budgets, and spending insights — all with a clean, modern, mobile-friendly interface.
-
-**Key feature:** Runs entirely in the browser with localStorage, and syncs to Supabase cloud when the user is logged in.
-
----
+ExpenseWise is a **Next.js 16 (Turbopack)** personal finance app for college students. It tracks expenses, money received, saved money, budgets, savings goals, and recurring expenses. All data is stored in **Supabase** (PostgreSQL + Auth + RLS). The app uses the **App Router** with route groups.
 
 ## Tech Stack
-
-| Technology | Version | Purpose |
-|-----------|---------|---------|
-| Next.js | 16.3.1 | Full-stack React framework (App Router) |
-| React | 19.2.8 | UI component library |
-| TypeScript | 5.x | Static type checking |
-| Tailwind CSS | 4.x | Utility-first CSS |
-| Supabase | 2.112.3 | Database + Auth |
-| Recharts | 3.10.1 | Charts (bar, pie) |
-| Lucide React | latest | Icons |
-
----
+- **Framework:** Next.js 16.3.1 (Turbopack)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS v4 (`@import "tailwindcss"` syntax)
+- **Database:** Supabase (PostgreSQL)
+- **Auth:** Supabase Auth (email/password + Google OAuth)
+- **Icons:** Lucide React
+- **Charts:** Recharts
+- **State:** React Context (no Redux/Zustand)
 
 ## Project Structure
-
 ```
-D:\AKSHATSEX\Accounts\
-├── .env.local                          # Supabase credentials (URL + anon key)
-├── package.json                        # Dependencies and scripts
-├── tsconfig.json                       # TypeScript config
-├── postcss.config.mjs                  # PostCSS config for Tailwind
-├── context.md                          # This file — project context
-│
-├── supabase/
-│   └── schema.sql                      # SQL schema — RUN THIS in Supabase SQL Editor
-│
-├── public/
-│   └── manifest.json                   # PWA manifest for iOS/Android home screen
-│
-└── src/
-    ├── app/
-    │   ├── layout.tsx                  # Root layout — wraps with ThemeProvider > AuthProvider > StoreProvider
-    │   ├── page.tsx                    # Dashboard (home page)
-    │   ├── globals.css                 # Tailwind import + dark mode + mobile optimizations
-    │   ├── not-found.tsx               # 404 error page
-    │   │
-    │   ├── expenses/
-    │   │   └── page.tsx                # Expense tracking — add/delete/filter by month
-    │   ├── money-received/
-    │   │   └── page.tsx                # Money received — add/delete/filter by month
-    │   ├── saved-money/
-    │   │   └── page.tsx                # Saved money — add/remove entries, history
-    │   ├── budgets/
-    │   │   └── page.tsx                # Budgets — set limits per category, progress bars
-    │   ├── savings-goals/
-    │   │   └── page.tsx                # Savings goals — create/edit/delete goals
-    │   ├── insights/
-    │   │   └── page.tsx                # Insights — charts, trends, smart text insights
-    │   ├── login/
-    │   │   └── page.tsx                # Login page — email/password + Google OAuth
-    │   ├── signup/
-    │   │   └── page.tsx                # Signup page — create account
-    │   └── profile/
-    │       └── page.tsx                # Profile — account info, stats, dark mode, sign out
-    │
-    ├── components/
-    │   └── Sidebar.tsx                 # Navigation — desktop sidebar + mobile bottom tab bar + theme toggle
-    │
-    └── lib/
-        ├── auth.tsx                    # AuthContext — Supabase Auth (signIn, signUp, signOut, Google)
-        ├── store.tsx                   # StoreContext — all data CRUD + computed helpers + Supabase sync
-        ├── supabase.ts                 # Supabase client config + DB type definitions
-        ├── theme.tsx                   # ThemeContext — dark/light/system mode toggle
-        └── types.ts                    # Legacy TypeScript interfaces (mostly unused now)
+src/
+  app/
+    layout.tsx              ← Root layout (minimal: html/body + ThemeProvider + AuthProvider)
+    globals.css             ← Tailwind + custom animations
+    (auth)/                 ← Route group: NO sidebar, separate aesthetic UI
+      layout.tsx            ← Just a wrapper div (no html/body)
+      login/page.tsx        ← Split-screen login with animated gradient
+      signup/page.tsx       ← Split-screen signup with animated gradient
+    (main)/                 ← Route group: WITH sidebar + StoreProvider + AuthGuard
+      layout.tsx            ← Sidebar + StoreProvider + AuthGuard
+      page.tsx              ← Dashboard (recharts, stats, charts)
+      expenses/page.tsx     ← CRUD with edit support
+      money-received/page.tsx
+      saved-money/page.tsx
+      budgets/page.tsx      ← Auto-syncs spent from expenses
+      savings-goals/page.tsx
+      recurring-expenses/page.tsx
+      insights/page.tsx
+      profile/page.tsx      ← Edit name/email/password, allowance, export, theme
+  lib/
+    supabase.ts             ← Supabase client + Database type definitions
+    auth.tsx                ← AuthProvider: signIn, signUp, signOut, updateName, updateEmail, updatePassword
+    store.tsx               ← StoreProvider: all CRUD + Supabase sync + computed values
+    theme.tsx               ← ThemeProvider (light/dark/system)
+  components/
+    Sidebar.tsx             ← Desktop sidebar + mobile bottom nav + theme toggle + profile link
+    AuthGuard.tsx           ← Redirects unauthenticated to /login, authenticated away from /login
+    Tip.tsx                 ← Reusable tip/advice component
+supabase/
+  schema.sql                ← Full database schema with 7 tables, indexes, RLS policies
 ```
 
----
+## Database Tables (all in `supabase/schema.sql`)
 
-## Routes
+| Table | Columns | Notes |
+|-------|---------|-------|
+| `expenses` | id, user_id, amount, category, description, date, created_at | |
+| `money_received` | id, user_id, amount, source, date, note, created_at | |
+| `budgets` | id, user_id, category, "limit", spent, period, created_at | `limit` is quoted (reserved keyword) |
+| `saved_money_entries` | id, user_id, amount, type (add/remove), date, note, created_at | |
+| `savings_goals` | id, user_id, name, target, current, deadline, created_at | |
+| `recurring_expenses` | id, user_id, name, amount, category, frequency, created_at | |
+| `app_settings` | user_id (PK), monthly_allowance, updated_at | One row per user |
 
-| Route | Page | Description |
-|-------|------|-------------|
-| `/` | Dashboard | Greeting, stat cards, charts, recent expenses, quick actions |
-| `/expenses` | Expenses | Add/delete expenses, month filter, category selector |
-| `/money-received` | Money Received | Add/delete income, source selector, month filter |
-| `/saved-money` | Saved Money | Add/remove saved money, history |
-| `/budgets` | Budgets | Set budgets per category, progress bars, warnings |
-| `/savings-goals` | Savings Goals | Create/edit/delete goals with progress tracking |
-| `/insights` | Insights | Monthly summary, trends, pie/bar charts, smart insights |
-| `/login` | Login | Email/password + Google sign-in |
-| `/signup` | Signup | Create new account |
-| `/profile` | Profile | Account info, stats, theme toggle, clear data, sign out |
-| `*` | 404 | Not found page |
+All tables have:
+- `user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE`
+- Indexes on `user_id`
+- RLS enabled with 4 policies each (SELECT, INSERT, UPDATE, DELETE using `auth.uid() = user_id`)
 
----
+## Supabase Connection
 
-## Providers (wrapped in layout.tsx)
-
+**`.env.local`** must contain:
 ```
-ThemeProvider (theme.tsx)
-  └── AuthProvider (auth.tsx)
-       └── StoreProvider (store.tsx)
-            └── <Sidebar /> + <main>{children}</main>
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
 ```
 
----
+**Client:** `src/lib/supabase.ts` exports `supabase` client and `Database` interface.
 
-## Data Model
+## Data Flow (all in `src/lib/store.tsx`)
 
-### Expense
-```typescript
-{ id, amount, category, description, date, createdAt }
-```
+Every feature follows the same pattern:
+1. **Load:** `loadSupabaseData(userId)` fetches all tables via `Promise.all` on mount
+2. **Create:** Updates React state optimistically → fires `.insert()` to Supabase
+3. **Update:** Updates React state → fires `.update()` to Supabase
+4. **Delete:** Updates React state → fires `.delete()` to Supabase
+5. **Fallback:** localStorage always written as backup; used when not logged in
 
-### MoneyReceived
-```typescript
-{ id, amount, source, date, note, createdAt }
-```
+### Feature → Supabase Table Mapping
 
-### Budget
-```typescript
-{ id, category, limit, spent, period ('monthly'|'weekly'), createdAt }
-```
+| Feature | Table | Load | Add | Update | Delete |
+|---------|-------|------|-----|--------|--------|
+| Expenses | `expenses` | ✅ | ✅ | ✅ | ✅ |
+| Money Received | `money_received` | ✅ | ✅ | ❌ No UI | ✅ |
+| Saved Money | `saved_money_entries` | ✅ | ✅ | ❌ No UI | ✅ |
+| Budgets | `budgets` | ✅ | ✅ | ✅ | ✅ |
+| Savings Goals | `savings_goals` | ✅ | ✅ | ✅ | ✅ |
+| Recurring Expenses | `recurring_expenses` | ✅ | ✅ | ✅ | ✅ |
+| App Settings | `app_settings` | ✅ | ✅ (upsert) | ✅ (upsert) | N/A |
 
-### SavedMoneyEntry
-```typescript
-{ id, amount, type ('add'|'remove'), date, note, createdAt }
-```
+### Dashboard Computed Values
+- `getTotalReceived(month)` — sums `moneyReceived` for the month
+- `getTotalExpenses(month)` — sums `expenses` for the month
+- `getMoneyLeft(month)` — received - expenses
+- `getCurrentSavedMoney()` — sums add/remove entries
+- `getSpentByCategory(month)` — groups expenses by category
 
-### SavingsGoal
-```typescript
-{ id, name, target, current, deadline, createdAt }
-```
+## Auth System (`src/lib/auth.tsx`)
 
-### AppSettings
-```typescript
-{ monthlyAllowance }
-```
+- `AuthProvider` wraps the app, listens to `supabase.auth.onAuthStateChange()`
+- Methods: `signIn`, `signUp`, `signOut`, `signInWithGoogle`, `updateName`, `updateEmail`, `updatePassword`
+- `AuthGuard` component protects `(main)` routes — redirects to `/login` if not authenticated
 
----
+## Profile Page Features (`src/app/(main)/profile/page.tsx`)
 
-## Expense Categories (13)
+- Edit display name → `supabase.auth.updateUser({ data: { name } })`
+- Edit email → `supabase.auth.updateUser({ email })` (sends confirmation)
+- Change password → `supabase.auth.updateUser({ password })`
+- Monthly allowance → `store.updateSettings()` → upserts to `app_settings`
+- Export data → CSV or JSON download
+- Theme toggle (light/dark/system)
+- Clear all data (localStorage)
+- Sign out
 
-| Category | Color |
-|----------|-------|
-| Food & Drinks | #ef4444 |
-| Transport | #f97316 |
-| Education | #8b5cf6 |
-| Rent / PG | #6366f1 |
-| Bills | #3b82f6 |
-| Mobile / Internet | #0ea5e9 |
-| Entertainment | #22c55e |
-| Shopping | #eab308 |
-| Health | #ec4899 |
-| Snacks / Coffee | #d97316 |
-| Subscriptions | #14b8a6 |
-| Gifts | #a855f7 |
-| Other | #78716c |
+## Auth Pages UI (`src/app/(auth)/`)
 
-## Money Sources (6)
+- Split-screen design: gradient left, glass-morphism form card right
+- Login: indigo→purple→pink gradient
+- Signup: purple→pink→orange gradient
+- Animations: floating orbs, fade-in cascades, shake on error, gradient shift
+- CSS animations defined in `globals.css` keyframes
 
-| Source | Color |
-|--------|-------|
-| Parents | #22c55e |
-| Scholarship | #8b5cf6 |
-| Freelance | #3b82f6 |
-| Part-time | #f97316 |
-| Gift | #ec4899 |
-| Other | #78716c |
+## Conventions
 
----
+- All components use `'use client'`
+- Lucide icons for all UI icons
+- Indian Rupee symbol: `{'\u20B9'}`
+- Date formatting: `en-IN` locale
+- Rounded corners: `rounded-xl` or `rounded-2xl`
+- Dark mode: `dark:` prefix variants throughout
+- Touch targets: min 44px on mobile
+- Error handling: `console.error` for Supabase errors, user-facing toast/alert not yet implemented
 
-## State Management
-
-### Three Context Providers:
-
-1. **ThemeContext** (`src/lib/theme.tsx`)
-   - Manages light/dark/system theme
-   - Persists to `localStorage` key: `expensewise-theme`
-   - Toggles `.dark` class on `<html>` element
-
-2. **AuthContext** (`src/lib/auth.tsx`)
-   - Uses real Supabase Auth
-   - Methods: `signIn`, `signUp`, `signOut`, `signInWithGoogle`
-   - Exposes `user` object: `{ id, email, name }`
-
-3. **StoreContext** (`src/lib/store.tsx`)
-   - All CRUD operations for expenses, money received, budgets, saved money, savings goals
-   - **Dual persistence:** writes to both Supabase (when logged in) AND localStorage (always as backup)
-   - Computed helpers: `getTotalReceived`, `getTotalExpenses`, `getMoneyLeft`, `getCurrentSavedMoney`, `getSpentByCategory`
-   - `isUsingCloud` boolean to check if Supabase is active
-
----
-
-## Supabase Setup
-
-### Credentials
-- **Project URL:** `https://ihzrhhrlfccvorbwjlqr.supabase.co`
-- **Anon Key:** stored in `.env.local`
-
-### Database Tables
-Created by running `supabase/schema.sql`:
-- `expenses` (id, user_id, amount, category, description, date, created_at)
-- `money_received` (id, user_id, amount, source, date, note, created_at)
-- `budgets` (id, user_id, category, limit, spent, period, created_at)
-- `saved_money_entries` (id, user_id, amount, type, date, note, created_at)
-- `savings_goals` (id, user_id, name, target, current, deadline, created_at)
-- `app_settings` (user_id PK, monthly_allowance, updated_at)
-
-### Security
-- **Row Level Security (RLS)** enabled on all tables
-- Users can only access their own data (`auth.uid() = user_id`)
-- Indexes on user_id and date columns for performance
-
----
-
-## UI Features
-
-### Dark Mode
-- **3 modes:** Light / Dark / System (follows OS preference)
-- Toggle in sidebar (desktop) and slide-out menu (mobile)
-- Persisted to localStorage
-- Smooth transitions on all color changes
-
-### Mobile Responsive
-- **Desktop:** Full sidebar + main content
-- **Mobile:** Hamburger menu + bottom tab bar (Home, Expenses, Money, Budgets, Profile)
-- Touch-friendly 44px minimum touch targets
-- Safe area insets for iPhone notch (Dynamic Island)
-- PWA manifest for Add to Home Screen on iOS/Android
-
-### Button Interactivity
-- `active:scale-95` on all buttons for tactile press feedback
-- `hover:shadow-md` on cards for lift effect
-- Colored shadows on primary buttons (`shadow-indigo-600/20`)
-- Smooth transitions on all interactive elements
-
----
-
-## Scripts
-
+## Build Command
 ```bash
-npm run dev       # Start development server
-npm run build     # Production build + type check
-npm run start     # Start production server
-npm run lint      # Run ESLint
+npm run build
 ```
 
----
-
-## Getting Started
-
-1. Install dependencies: `npm install`
-2. Run the SQL schema in Supabase SQL Editor (from `supabase/schema.sql`)
-3. Start dev server: `npm run dev`
-4. Open `http://localhost:3000`
-5. Sign up for an account on `/signup`
-
----
-
-## Known Issues
-
-- `src/lib/types.ts` contains legacy interfaces (Account, Transaction, Transfer) that are no longer used — can be cleaned up
-- `generate-files.cjs` at root is a leftover generator script — can be deleted
-- Supabase Google OAuth requires additional setup in Supabase dashboard (Authentication > Providers > Google)
-
----
-
-## Design System
-
-| Element | Value |
-|---------|-------|
-| Primary accent | Indigo (#6366f1) |
-| Success | Green (#22c55e) |
-| Danger | Red (#ef4444) |
-| Warning | Amber (#eab308) |
-| Light background | Gray-50 (#f9fafb) |
-| Dark background | Gray-950 (#030712) |
-| Cards | White dark:bg-gray-800 with subtle borders |
-| Border radius | xl (12px) for cards, 2xl (16px) for modals |
-| Font | Inter (Google Fonts) |
-| Currency | ₹ (Indian Rupee) |
+## Known Gaps / Future Work
+- No edit UI for Money Received or Saved Money entries (Supabase UPDATE policies exist but unused)
+- No edit UI for Money Received (no `updateMoneyReceived` function in store)
+- No edit UI for Saved Money entries (no `updateSavedMoneyEntry` function in store)
+- No user-facing error toasts (errors only go to console)
+- Recurring expenses don't auto-generate regular expense entries
+- No data migration from localStorage to Supabase (only load fallback)
+- No tests written yet

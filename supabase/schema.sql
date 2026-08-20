@@ -3,9 +3,6 @@
 -- Run this in Supabase SQL Editor
 -- ============================================
 
--- Enable Row Level Security
-ALTER DATABASE postgres SET "app.jwt_secret" TO 'your-jwt-secret';
-
 -- ============================================
 -- EXPENSES TABLE
 -- ============================================
@@ -39,7 +36,7 @@ CREATE TABLE IF NOT EXISTS budgets (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   category TEXT NOT NULL,
-  limit NUMERIC(12, 2) NOT NULL CHECK (limit > 0),
+  "limit" NUMERIC(12, 2) NOT NULL CHECK ("limit" > 0),
   spent NUMERIC(12, 2) DEFAULT 0 NOT NULL,
   period TEXT DEFAULT 'monthly' CHECK (period IN ('weekly', 'monthly')),
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
@@ -72,6 +69,19 @@ CREATE TABLE IF NOT EXISTS savings_goals (
 );
 
 -- ============================================
+-- RECURRING EXPENSES TABLE
+-- ============================================
+CREATE TABLE IF NOT EXISTS recurring_expenses (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  name TEXT NOT NULL,
+  amount NUMERIC(12, 2) NOT NULL CHECK (amount > 0),
+  category TEXT NOT NULL,
+  frequency TEXT NOT NULL CHECK (frequency IN ('monthly', 'weekly', 'yearly')),
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- ============================================
 -- APP SETTINGS TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS app_settings (
@@ -96,6 +106,7 @@ CREATE INDEX IF NOT EXISTS idx_budgets_category ON budgets(category);
 
 CREATE INDEX IF NOT EXISTS idx_saved_money_user_id ON saved_money_entries(user_id);
 CREATE INDEX IF NOT EXISTS idx_savings_goals_user_id ON savings_goals(user_id);
+CREATE INDEX IF NOT EXISTS idx_recurring_expenses_user_id ON recurring_expenses(user_id);
 
 -- ============================================
 -- ROW LEVEL SECURITY (RLS)
@@ -105,6 +116,7 @@ ALTER TABLE money_received ENABLE ROW LEVEL SECURITY;
 ALTER TABLE budgets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE saved_money_entries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE savings_goals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE recurring_expenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE app_settings ENABLE ROW LEVEL SECURITY;
 
 -- Users can only see their own data
@@ -133,6 +145,12 @@ CREATE POLICY "Users can insert own savings_goals" ON savings_goals FOR INSERT W
 CREATE POLICY "Users can update own savings_goals" ON savings_goals FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Users can delete own savings_goals" ON savings_goals FOR DELETE USING (auth.uid() = user_id);
 
+CREATE POLICY "Users can view own recurring_expenses" ON recurring_expenses FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own recurring_expenses" ON recurring_expenses FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own recurring_expenses" ON recurring_expenses FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own recurring_expenses" ON recurring_expenses FOR DELETE USING (auth.uid() = user_id);
+
 CREATE POLICY "Users can view own settings" ON app_settings FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can insert own settings" ON app_settings FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update own settings" ON app_settings FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own settings" ON app_settings FOR DELETE USING (auth.uid() = user_id);

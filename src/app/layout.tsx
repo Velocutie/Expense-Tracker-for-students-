@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { StoreProvider } from "@/lib/store";
 import { AuthProvider } from "@/lib/auth";
 import { ThemeProvider } from "@/lib/theme";
-import { Sidebar } from "@/components/Sidebar";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -36,14 +34,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="h-full bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-[family-name:var(--font-inter)] transition-colors duration-200">
         <ThemeProvider>
           <AuthProvider>
-            <StoreProvider>
-              <div className="flex h-full">
-                <Sidebar />
-                <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8 pt-16 md:pt-6 pb-24 md:pb-6">
-                  {children}
-                </main>
-              </div>
-            </StoreProvider>
+            {children}
           </AuthProvider>
         </ThemeProvider>
       </body>

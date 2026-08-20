@@ -17,6 +17,9 @@ interface AuthContextType {
   signUp: (email: string, password: string, name?: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<{ error?: string }>;
+  updateName: (name: string) => Promise<{ error?: string }>;
+  updateEmail: (email: string) => Promise<{ error?: string }>;
+  updatePassword: (password: string) => Promise<{ error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -87,8 +90,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return {};
   }, []);
 
+  const updateName = useCallback(async (name: string) => {
+    const { error } = await supabase.auth.updateUser({ data: { name } });
+    if (error) return { error: error.message };
+    setUser(prev => prev ? { ...prev, name } : null);
+    return {};
+  }, []);
+
+  const updateEmail = useCallback(async (email: string) => {
+    const { error } = await supabase.auth.updateUser({ email });
+    if (error) return { error: error.message };
+    return {};
+  }, []);
+
+  const updatePassword = useCallback(async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) return { error: error.message };
+    return {};
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, signInWithGoogle }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, signInWithGoogle, updateName, updateEmail, updatePassword }}>
       {children}
     </AuthContext.Provider>
   );

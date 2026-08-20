@@ -110,6 +110,7 @@ interface StoreData {
 
 interface StoreContextType extends StoreData {
   addExpense: (e: Omit<Expense, 'id' | 'createdAt'>) => void;
+  updateExpense: (id: string, data: Partial<Expense>) => void;
   deleteExpense: (id: string) => void;
   addMoneyReceived: (m: Omit<MoneyReceived, 'id' | 'createdAt'>) => void;
   deleteMoneyReceived: (id: string) => void;
@@ -180,12 +181,13 @@ function saveLocalData(d: StoreData) {
 // ===================== SUPABASE HELPERS =====================
 
 async function loadSupabaseData(userId: string): Promise<StoreData> {
-  const [expensesRes, moneyRes, budgetsRes, savedRes, goalsRes, settingsRes] = await Promise.all([
+  const [expensesRes, moneyRes, budgetsRes, savedRes, goalsRes, recurringRes, settingsRes] = await Promise.all([
     supabase.from('expenses').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
     supabase.from('money_received').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
     supabase.from('budgets').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
     supabase.from('saved_money_entries').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
     supabase.from('savings_goals').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+    supabase.from('recurring_expenses').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
     supabase.from('app_settings').select('*').eq('user_id', userId).single(),
   ]);
 
@@ -210,7 +212,10 @@ async function loadSupabaseData(userId: string): Promise<StoreData> {
       id: g.id, name: g.name, target: g.target,
       current: g.current, deadline: g.deadline || '', createdAt: g.created_at,
     })),
-    recurringExpenses: [], // Not synced to cloud yet
+    recurringExpenses: (recurringRes.data || []).map(r => ({
+      id: r.id, name: r.name, amount: r.amount,
+      category: r.category, frequency: r.frequency, createdAt: r.created_at,
+    })),
     settings: settingsRes.data
       ? { monthlyAllowance: settingsRes.data.monthly_allowance }
       : { monthlyAllowance: 5000 },
@@ -263,6 +268,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         category: expense.category, description: expense.description,
         date: expense.date, created_at: createdAt,
       }).then(({ error }) => { if (error) console.error('Supabase insert error:', error); });
+    }
+  }, [user]);
+
+  const updateExpense = useCallback((id: string, d: Partial<Expense>) => {
+    setData(p => ({ ...p, expenses: p.expenses.map(e => e.id === id ? { ...e, ...d } : e) }));
+    if (user) {
+      const update: Record<string, unknown> = {};
+      if (d.amount !== undefined) update.amount = d.amount;
+      if (d.category !== undefined) update.category = d.category;
+      if (d.description !== undefined) update.description = d.description;
+      if (d.date !== undefined) update.date = d.date;
+      supabase.from('expenses').update(update).eq('id', id).then(({ error }) => {
+        if (error) console.error('Supabase update error:', error);
+      });
     }
   }, [user]);
 
@@ -400,15 +419,36 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const id = gid();
     const createdAt = new Date().toISOString();
     setData(p => ({ ...p, recurringExpenses: [...p.recurringExpenses, { ...r, id, createdAt }] }));
-  }, []);
+    if (user) {
+      supabase.from('recurring_expenses').insert({
+        id, user_id: user.id, name: r.name, amount: r.amount,
+        category: r.category, frequency: r.frequency, created_at: createdAt,
+      }).then(({ error }) => { if (error) console.error('Supabase insert error:', error); });
+    }
+  }, [user]);
 
   const updateRecurringExpense = useCallback((id: string, d: Partial<RecurringExpense>) => {
     setData(p => ({ ...p, recurringExpenses: p.recurringExpenses.map(r => r.id === id ? { ...r, ...d } : r) }));
-  }, []);
+    if (user) {
+      const update: Record<string, unknown> = {};
+      if (d.name !== undefined) update.name = d.name;
+      if (d.amount !== undefined) update.amount = d.amount;
+      if (d.category !== undefined) update.category = d.category;
+      if (d.frequency !== undefined) update.frequency = d.frequency;
+      supabase.from('recurring_expenses').update(update).eq('id', id).then(({ error }) => {
+        if (error) console.error('Supabase update error:', error);
+      });
+    }
+  }, [user]);
 
   const deleteRecurringExpense = useCallback((id: string) => {
     setData(p => ({ ...p, recurringExpenses: p.recurringExpenses.filter(r => r.id !== id) }));
-  }, []);
+    if (user) {
+      supabase.from('recurring_expenses').delete().eq('id', id).then(({ error }) => {
+        if (error) console.error('Supabase delete error:', error);
+      });
+    }
+  }, [user]);
 
   // ===================== SETTINGS =====================
   const updateSettings = useCallback((s: Partial<AppSettings>) => {
@@ -452,7 +492,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   return (
     <StoreContext.Provider value={{
-      ...data, addExpense, deleteExpense, addMoneyReceived, deleteMoneyReceived,
+      ...data, addExpense, updateExpense, deleteExpense, addMoneyReceived, deleteMoneyReceived,
       addBudget, updateBudget, deleteBudget, addSavedMoneyEntry, deleteSavedMoneyEntry,
       addSavingsGoal, updateSavingsGoal, deleteSavingsGoal,
       addRecurringExpense, updateRecurringExpense, deleteRecurringExpense,
