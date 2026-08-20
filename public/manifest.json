@@ -1,0 +1,22 @@
+{
+  "name": "ExpenseWise — College Student Money Manager",
+  "short_name": "ExpenseWise",
+  "description": "Track your expenses, manage money received, and stay on budget as a college student.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#6366f1",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
