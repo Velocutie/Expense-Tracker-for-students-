@@ -357,9 +357,9 @@ body.no-pull-refresh { overscroll-behavior-y: contain; }
 /* Softer light mode: purple atmosphere instead of stark neutral white. */
 body {
   background:
-    radial-gradient(circle at 4% -8%, rgba(192, 132, 252, 0.18), transparent 32%),
-    radial-gradient(circle at 100% 18%, rgba(221, 214, 254, 0.28), transparent 34%),
-    linear-gradient(135deg, #faf8ff 0%, #f7f2ff 48%, #f5f7ff 100%);
+    radial-gradient(circle at 4% -8%, rgba(168, 85, 247, 0.22), transparent 32%),
+    radial-gradient(circle at 100% 18%, rgba(216, 180, 254, 0.34), transparent 34%),
+    linear-gradient(135deg, #faf7ff 0%, #f5efff 48%, #f3f5ff 100%);
 }
 
 .dark body {

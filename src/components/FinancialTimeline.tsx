@@ -22,8 +22,9 @@ export function FinancialTimeline({ income, bills, spending, savings, monthLabel
       <div className="absolute -right-16 -top-20 h-48 w-48 rounded-full bg-fuchsia-300/20 blur-3xl dark:bg-fuchsia-500/10" aria-hidden="true" />
       <div className="relative flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-purple-700/70 dark:text-purple-200/65">Your money flow</p>
-          <h2 id="financial-timeline-title" className="mt-1 text-base font-bold tracking-[-0.02em] text-purple-950 dark:text-white">Income → bills → spending → savings</h2>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-purple-700/70 dark:text-purple-200/65">Analytics</p>
+          <h2 id="financial-timeline-title" className="mt-1 text-base font-bold tracking-[-0.02em] text-purple-950 dark:text-white">Financial timeline</h2>
+          <p className="mt-1 text-xs text-purple-900/65 dark:text-purple-100/60">Income → bills → spending → savings</p>
         </div>
         <span className="text-xs font-medium text-purple-700/65 dark:text-purple-200/60">{monthLabel}</span>
       </div>

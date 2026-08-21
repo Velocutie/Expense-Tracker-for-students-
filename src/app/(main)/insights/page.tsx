@@ -11,6 +11,8 @@ import {
 import { Tip } from '@/components/Tip';
 import { SmartTips } from '@/components/SmartTips';
 import { FinancialTimeline } from '@/components/FinancialTimeline';
+import { CashFlowForecast } from '@/components/CashFlowForecast';
+import { CurrencyRateCard } from '@/components/CurrencyRateCard';
 
 function getMonthKey(d: Date | string) { return typeof d === 'string' ? d.slice(0, 7) : d.toISOString().slice(0, 7); }
 function prevMonthKey(mk: string) {
@@ -37,7 +39,7 @@ const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const BILL_CATEGORIES = new Set(['Rent / PG', 'Bills', 'Mobile / Internet', 'Subscriptions']);
 
 export default function InsightsPage() {
-  const { expenses, moneyReceived, savedMoneyEntries, getCurrentSavedMoney, getSpentByCategory, getTotalReceived, getTotalExpenses } = useStore();
+  const { expenses, moneyReceived, savedMoneyEntries, recurringExpenses, getCurrentSavedMoney, getSpentByCategory, getTotalReceived, getTotalExpenses } = useStore();
   
   const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [month, setMonth] = useState(getMonthKey(todayStr));
@@ -56,6 +58,27 @@ export default function InsightsPage() {
 
   const [yearNum, monthNum] = month.split('-').map(Number);
   const daysInMonth = new Date(yearNum, monthNum, 0).getDate();
+  const currentDate = new Date();
+  const isCurrentMonth = month === getMonthKey(currentDate);
+  const elapsedDays = isCurrentMonth ? Math.max(currentDate.getDate(), 1) : daysInMonth;
+  const remainingDays = isCurrentMonth ? Math.max(daysInMonth - currentDate.getDate(), 0) : 0;
+  const projectedRemainingSpending = isCurrentMonth ? Math.max(0, (totalExpenses / elapsedDays) * remainingDays) : 0;
+  const recurringBills = recurringExpenses.reduce((sum, item) => {
+    if (item.category === 'Rent / PG' || item.category === 'Bills' || item.category === 'Mobile / Internet' || item.category === 'Subscriptions') {
+      if (item.frequency === 'monthly') return sum + item.amount;
+      if (item.frequency === 'weekly') return sum + item.amount * 4.33;
+      return sum + item.amount / 12;
+    }
+    return sum;
+  }, 0);
+  const historicalMonthKeys = Array.from({ length: 3 }, (_, index) => {
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - index, 1);
+    return getMonthKey(date);
+  });
+  const historicalSpending = historicalMonthKeys.reduce((sum, key) => sum + getTotalExpenses(key), 0) / historicalMonthKeys.length;
+  const historicalIncome = historicalMonthKeys.reduce((sum, key) => sum + getTotalReceived(key), 0) / historicalMonthKeys.length;
+  const recurringIncome = Math.max(0, historicalIncome - totalReceived);
+  const projectedBalance = totalReceived + recurringIncome - totalExpenses - projectedRemainingSpending - recurringBills;
   const avgDaily = daysInMonth > 0 ? Math.round(totalExpenses / daysInMonth) : 0;
   const pctChange = prevExpenses > 0 ? Math.round(((totalExpenses - prevExpenses) / prevExpenses) * 100) : 0;
 
@@ -200,6 +223,17 @@ export default function InsightsPage() {
         savings={getCurrentSavedMoney()}
         monthLabel={getFullMonthLabel(month)}
       />
+
+      <CashFlowForecast
+        currentIncome={totalReceived}
+        recurringIncome={recurringIncome}
+        recurringBills={recurringBills}
+        historicalSpending={historicalSpending + projectedRemainingSpending}
+        projectedBalance={projectedBalance}
+        monthLabel={getFullMonthLabel(month)}
+      />
+
+      <CurrencyRateCard />
 
       {/* ── SPENDING & EARNINGS CALENDAR ── */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-5 space-y-4">

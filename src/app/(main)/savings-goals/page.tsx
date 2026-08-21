@@ -5,6 +5,7 @@ import { useStore } from '@/lib/store';
 import { Plus, Trash2, Target, Pencil } from 'lucide-react';
 import { Tip } from '@/components/Tip';
 import { Modal } from '@/components/Modal';
+import { SavingsWhatIf } from '@/components/SavingsWhatIf';
 
 export default function SavingsGoalsPage() {
   const { savingsGoals, addSavingsGoal, updateSavingsGoal, deleteSavingsGoal } = useStore();
@@ -86,6 +87,8 @@ export default function SavingsGoalsPage() {
       </Modal>
 
       <Tip>Set a deadline for your goals. Without one, it&apos;s easy to keep pushing \'I&apos;ll save next month\' forever.</Tip>
+
+      <SavingsWhatIf goals={savingsGoals} />
 
       {savingsGoals.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
