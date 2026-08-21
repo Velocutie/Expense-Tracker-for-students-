@@ -337,3 +337,18 @@ body.no-pull-refresh { overscroll-behavior-y: contain; }
   border-color: rgba(216, 180, 254, 0.26);
   box-shadow: 0 28px 60px -30px rgba(0, 0, 0, 0.78), 0 0 26px rgba(168, 85, 247, 0.08);
 }
+
+
+/* Sidebar content eases in place instead of snapping as the container changes width. */
+.sidebar-label-transition {
+  transition-property: max-width, opacity, transform;
+  transition-duration: 360ms;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: max-width, opacity, transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-label-transition {
+    transition-duration: 0.01ms;
+  }
+}

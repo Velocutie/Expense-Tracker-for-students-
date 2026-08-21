@@ -10,12 +10,12 @@ import {
 import { useState, useEffect } from 'react';
 import { useTheme } from '@/lib/theme';
 import { useAuth } from '@/lib/auth';
-import { ExpenseWiseBrand } from '@/components/ExpenseWiseBrand';
+import { ExpenseWiseMark } from '@/components/ExpenseWiseBrand';
 
 /* ─────────────────────── CONSTANTS ─────────────────────── */
 
-const EXPANDED_W = 240;
-const COLLAPSED_W = 72;
+const EXPANDED_W = 272;
+const COLLAPSED_W = 80;
 const CARD_MARGIN = 8; // m-2 = 8px each side
 
 const NAV_SECTIONS = [
@@ -97,9 +97,9 @@ function NavItem({
       title={isCollapsed ? label : undefined}
       aria-label={label}
       className={`
-        relative flex items-center rounded-xl text-sm font-medium
-        transition-colors duration-150 group active:scale-[0.97]
-        ${isCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2'}
+        relative flex items-center rounded-xl text-[15px] font-medium
+        transition-[background-color,color,box-shadow,transform] duration-200 group active:scale-[0.97]
+        ${isCollapsed ? 'justify-center p-3' : 'gap-3.5 px-4 py-3'}
         ${isActive
           ? 'bg-purple-500/[0.11] dark:bg-purple-400/[0.16] text-purple-700 dark:text-purple-200 font-semibold ring-1 ring-purple-500/20 dark:ring-purple-300/20 shadow-[0_8px_18px_-14px_rgba(124,58,237,0.9)]'
           : 'text-gray-600 dark:text-gray-400 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] hover:text-gray-900 dark:hover:text-gray-100'
@@ -117,7 +117,7 @@ function NavItem({
       )}
 
       <Icon
-        size={17}
+        size={isCollapsed ? 19 : 18}
         className={`shrink-0 ${isActive ? 'text-purple-600 dark:text-purple-200' : ''}`}
       />
 
@@ -125,8 +125,8 @@ function NavItem({
       <span
         className={`
           whitespace-nowrap overflow-hidden leading-none
-          transition-[max-width,opacity] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]
-          ${isCollapsed ? 'max-w-0 opacity-0' : 'max-w-[180px] opacity-100'}
+          sidebar-label-transition
+          ${isCollapsed ? 'max-w-0 opacity-0 translate-x-[-4px]' : 'max-w-[190px] opacity-100 translate-x-0'}
         `}
       >
         {label}
@@ -167,16 +167,20 @@ function SidebarInner({
       <div
         className={`
           shrink-0 border-b border-black/[0.05] dark:border-white/[0.05]
-          transition-all duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]
+          transition-all duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)]
           ${collapsed
-            ? 'flex flex-col items-center justify-center py-2.5 px-1 gap-1.5 min-h-[72px]'
-            : 'flex items-center justify-between h-[60px] px-3'
+            ? 'flex flex-col items-center justify-center py-3 px-1 gap-2 min-h-[80px]'
+            : 'flex items-center justify-between h-[68px] px-4'
           }
         `}
       >
         {/* Logo & Brand Slot */}
         <div className={`flex items-center min-w-0 ${collapsed ? 'justify-center' : 'gap-2.5 flex-1 overflow-hidden'}`} title={collapsed ? 'ExpenseWise' : undefined}>
-          <ExpenseWiseBrand size="sm" showName={!collapsed} showTagline={!collapsed} />
+          <ExpenseWiseMark size="sm" />
+          <div className={`min-w-0 overflow-hidden sidebar-label-transition ${collapsed ? 'max-w-0 opacity-0 translate-x-[-4px]' : 'max-w-[150px] opacity-100 translate-x-0'}`}>
+            <p className="text-[15px] font-bold text-gray-950 dark:text-white leading-none whitespace-nowrap tracking-[-0.03em]">ExpenseWise</p>
+            <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 whitespace-nowrap font-medium tracking-[0.02em]">Student Finance</p>
+          </div>
         </div>
 
         {/* Toggle button */}
@@ -203,19 +207,19 @@ function SidebarInner({
       </div>
 
       {/* ── NAVIGATION ─────────────────────────────────── */}
-      <nav className="flex-1 overflow-y-auto overflow-x-visible py-3 px-2 space-y-1">
+      <nav className="flex-1 overflow-y-auto overflow-x-visible py-4 px-3 space-y-2">
         {NAV_SECTIONS.map((section, idx) => (
-          <div key={section.label} className="mb-1">
+          <div key={section.label} className="mb-2">
             {/* Section label or subtle divider */}
             {collapsed ? (
               idx > 0 && <div className="my-1.5 border-t border-black/[0.06] dark:border-white/[0.06] mx-1" />
             ) : (
-              <div className="px-3 pt-1 pb-1.5 text-[10px] font-semibold tracking-widest uppercase text-gray-400 dark:text-gray-500 select-none">
+              <div className="px-4 pt-1 pb-2 text-[10px] font-semibold tracking-widest uppercase text-gray-400 dark:text-gray-500 select-none">
                 {section.label}
               </div>
             )}
 
-            <div className="space-y-0.5">
+            <div className="space-y-1">
               {section.items.map((item) => (
                 <NavItem
                   key={item.href}
@@ -235,12 +239,12 @@ function SidebarInner({
           {collapsed ? (
             <div className="my-1.5 border-t border-black/[0.06] dark:border-white/[0.06] mx-1" />
           ) : (
-            <div className="px-3 pt-3 pb-1.5 text-[10px] font-semibold tracking-widest uppercase text-gray-400 dark:text-gray-500 select-none">
+            <div className="px-4 pt-4 pb-2 text-[10px] font-semibold tracking-widest uppercase text-gray-400 dark:text-gray-500 select-none">
               Account
             </div>
           )}
 
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             <NavItem
               href="/profile"
               label="Profile"
@@ -256,8 +260,8 @@ function SidebarInner({
       <div
         className={`
           px-2 shrink-0 overflow-hidden
-          transition-[max-height,opacity,padding-bottom] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]
-          ${collapsed ? 'max-h-0 opacity-0 pb-0' : 'max-h-16 opacity-100 pb-2'}
+          transition-[max-height,opacity,padding-bottom,transform] duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)]
+          ${collapsed ? 'max-h-0 opacity-0 pb-0 -translate-y-2' : 'max-h-16 opacity-100 pb-3 translate-y-0'}
         `}
       >
         <div className="flex items-center gap-1 p-1 bg-black/[0.04] dark:bg-white/[0.05] border border-black/[0.06] dark:border-white/[0.07] rounded-xl">
@@ -296,7 +300,7 @@ function SidebarInner({
             relative flex items-center rounded-xl
             hover:bg-black/[0.04] dark:hover:bg-white/[0.06]
             transition-colors duration-150 group cursor-pointer
-            ${collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2'}
+            ${collapsed ? 'justify-center p-3' : 'gap-3.5 px-4 py-3'}
           `}
         >
           <div className="w-7 h-7 rounded-lg bg-purple-100/80 dark:bg-purple-400/20 flex items-center justify-center shrink-0">
@@ -305,7 +309,7 @@ function SidebarInner({
           <div
             className={`
               flex-1 min-w-0 overflow-hidden
-              transition-[max-width,opacity] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]
+              sidebar-label-transition
               ${collapsed ? 'max-w-0 opacity-0' : 'max-w-[140px] opacity-100'}
             `}
           >
@@ -329,7 +333,7 @@ function SidebarInner({
             hover:bg-rose-500/[0.08] dark:hover:bg-rose-500/[0.12]
             hover:text-rose-600 dark:hover:text-rose-400
             transition-colors duration-150 group
-            ${collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2'}
+            ${collapsed ? 'justify-center p-3' : 'gap-3.5 px-4 py-3'}
           `}
           aria-label="Sign out"
         >
@@ -337,7 +341,7 @@ function SidebarInner({
           <span
             className={`
               text-sm font-medium whitespace-nowrap overflow-hidden
-              transition-[max-width,opacity] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]
+              sidebar-label-transition
               ${collapsed ? 'max-w-0 opacity-0' : 'max-w-[120px] opacity-100'}
             `}
           >
@@ -389,8 +393,9 @@ export function Sidebar() {
         style={{
           width: sidebarW,
           minWidth: sidebarW,
-          transition: `width 220ms cubic-bezier(0.4,0,0.2,1),
-                       min-width 220ms cubic-bezier(0.4,0,0.2,1)`,
+          willChange: 'width',
+          transition: `width 360ms cubic-bezier(0.22,1,0.36,1),
+                       min-width 360ms cubic-bezier(0.22,1,0.36,1)`,
         }}
       >
         {/* Glass card — absolutely positioned to match aside width */}
@@ -406,7 +411,8 @@ export function Sidebar() {
           "
           style={{
             width: cardW,
-            transition: `width 220ms cubic-bezier(0.4,0,0.2,1)`,
+            willChange: 'width',
+            transition: `width 360ms cubic-bezier(0.22,1,0.36,1)`,
           }}
         >
           <SidebarInner
@@ -451,8 +457,8 @@ export function Sidebar() {
       {/* ═══════════════ MOBILE DRAWER ═══════════════ */}
       <aside
         className={`
-          md:hidden fixed inset-y-0 left-0 z-40 w-64
-          transition-transform duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]
+          md:hidden fixed inset-y-0 left-0 z-40 w-72
+          transition-transform duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)]
           p-2
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
