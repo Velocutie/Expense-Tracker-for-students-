@@ -85,7 +85,7 @@ export function Modal({
      * NO backdrop-filter here — that's what caused the "black page" bug.
      */
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50 dark:bg-black/65"
+      className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-4 bg-purple-950/42 dark:bg-black/68 backdrop-blur-[6px] transition-[background-color,backdrop-filter] duration-200"
       aria-hidden="false"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -103,27 +103,27 @@ export function Modal({
         aria-labelledby={labelId}
         className={`
           relative w-full max-w-md
-          bg-white dark:bg-gray-800
-          border border-gray-200/80 dark:border-gray-700
-          rounded-2xl shadow-2xl
-          max-h-[90vh] overflow-y-auto
+          bg-white/82 dark:bg-[#1b102b]/84 backdrop-blur-2xl
+          border border-white/65 dark:border-purple-200/15
+          rounded-[1.5rem] shadow-[0_30px_80px_-28px_rgba(45,16,80,0.68)]
+          max-h-[min(90vh,760px)] overflow-y-auto overscroll-contain
           animate-modal-in
           ${panelClassName}
         `}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-6">
+        <div className="p-5 sm:p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-5">
             <h2
               id={labelId}
-              className="text-lg font-bold text-gray-900 dark:text-white leading-snug"
+              className="text-lg font-bold text-gray-950 dark:text-white leading-snug tracking-[-0.02em]"
             >
               {title}
             </h2>
             <button
               onClick={onClose}
-              className="flex-shrink-0 p-1.5 -mr-1 rounded-lg text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300 transition-colors active:scale-90"
+              className="flex-shrink-0 p-1.5 -mr-1 rounded-xl text-gray-500 dark:text-purple-200/65 hover:bg-purple-100/70 dark:hover:bg-purple-400/15 hover:text-purple-700 dark:hover:text-purple-100 transition-all active:scale-90"
               aria-label="Close dialog"
               type="button"
             >

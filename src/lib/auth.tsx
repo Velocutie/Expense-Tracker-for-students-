@@ -8,6 +8,7 @@ export interface User {
   id: string;
   email: string;
   name?: string;
+  avatarUrl?: string;
 }
 
 interface AuthContextType {
@@ -20,6 +21,7 @@ interface AuthContextType {
   updateName: (name: string) => Promise<{ error?: string }>;
   updateEmail: (email: string) => Promise<{ error?: string }>;
   updatePassword: (password: string) => Promise<{ error?: string }>;
+  updateAvatar: (avatarUrl: string) => Promise<{ error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -30,6 +32,7 @@ function mapUser(supabaseUser: SupabaseUser | null): User | null {
     id: supabaseUser.id,
     email: supabaseUser.email || '',
     name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
+    avatarUrl: supabaseUser.user_metadata?.avatar_url,
   };
 }
 
@@ -109,8 +112,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return {};
   }, []);
 
+  const updateAvatar = useCallback(async (avatarUrl: string) => {
+    const { error } = await supabase.auth.updateUser({ data: { avatar_url: avatarUrl } });
+    if (error) return { error: error.message };
+    setUser(prev => prev ? { ...prev, avatarUrl } : null);
+    return {};
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, signInWithGoogle, updateName, updateEmail, updatePassword }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, signInWithGoogle, updateName, updateEmail, updatePassword, updateAvatar }}>
       {children}
     </AuthContext.Provider>
   );

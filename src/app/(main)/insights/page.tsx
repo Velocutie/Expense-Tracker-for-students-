@@ -9,6 +9,8 @@ import {
   ReceiptIndianRupee, X
 } from 'lucide-react';
 import { Tip } from '@/components/Tip';
+import { SmartTips } from '@/components/SmartTips';
+import { FinancialTimeline } from '@/components/FinancialTimeline';
 
 function getMonthKey(d: Date | string) { return typeof d === 'string' ? d.slice(0, 7) : d.toISOString().slice(0, 7); }
 function prevMonthKey(mk: string) {
@@ -32,6 +34,7 @@ function getFullMonthLabel(mk: string) {
 
 const COLORS = ['#3b82f6','#ef4444','#22c55e','#f97316','#8b5cf6','#ec4899'];
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const BILL_CATEGORIES = new Set(['Rent / PG', 'Bills', 'Mobile / Internet', 'Subscriptions']);
 
 export default function InsightsPage() {
   const { expenses, moneyReceived, savedMoneyEntries, getCurrentSavedMoney, getSpentByCategory, getTotalReceived, getTotalExpenses } = useStore();
@@ -45,6 +48,7 @@ export default function InsightsPage() {
 
   const totalReceived = getTotalReceived(month);
   const totalExpenses = getTotalExpenses(month);
+  const totalBills = expenses.filter(e => getMonthKey(e.date) === month && BILL_CATEGORIES.has(e.category)).reduce((sum, e) => sum + e.amount, 0);
   const prevExpenses = getTotalExpenses(prevMo);
 
   const catData = EXPENSE_CATEGORIES.filter(c => byCat[c.name]).map(c => ({ name: c.name, value: byCat[c.name], color: c.color }));
@@ -186,6 +190,16 @@ export default function InsightsPage() {
       </div>
 
       <Tip>Compare your spending with last month. If it went up, check which category grew the most — that&apos;s where to cut back.</Tip>
+
+      <SmartTips compact />
+
+      <FinancialTimeline
+        income={totalReceived}
+        bills={totalBills}
+        spending={totalExpenses}
+        savings={getCurrentSavedMoney()}
+        monthLabel={getFullMonthLabel(month)}
+      />
 
       {/* ── SPENDING & EARNINGS CALENDAR ── */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-5 space-y-4">

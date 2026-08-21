@@ -352,3 +352,47 @@ body.no-pull-refresh { overscroll-behavior-y: contain; }
     transition-duration: 0.01ms;
   }
 }
+
+
+/* Softer light mode: purple atmosphere instead of stark neutral white. */
+body {
+  background:
+    radial-gradient(circle at 4% -8%, rgba(192, 132, 252, 0.18), transparent 32%),
+    radial-gradient(circle at 100% 18%, rgba(221, 214, 254, 0.28), transparent 34%),
+    linear-gradient(135deg, #faf8ff 0%, #f7f2ff 48%, #f5f7ff 100%);
+}
+
+.dark body {
+  background:
+    radial-gradient(circle at 4% -8%, rgba(124, 58, 237, 0.18), transparent 32%),
+    radial-gradient(circle at 100% 18%, rgba(192, 132, 252, 0.10), transparent 34%),
+    linear-gradient(135deg, #0d0918 0%, #120b21 48%, #0d1325 100%);
+}
+
+.tip-card {
+  border: 1px solid rgba(109, 40, 217, 0.20);
+  background: linear-gradient(135deg, rgba(237, 233, 254, 0.94), rgba(221, 214, 254, 0.82));
+  box-shadow: 0 16px 34px -24px rgba(76, 29, 149, 0.40), inset 0 1px 0 rgba(255, 255, 255, 0.62);
+}
+
+.tip-card__glow {
+  position: absolute;
+  width: 10rem;
+  height: 10rem;
+  right: -4rem;
+  top: -5rem;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(216, 180, 254, 0.46), transparent 68%);
+  pointer-events: none;
+  transition: transform 350ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.tip-card:hover .tip-card__glow { transform: translate(-0.5rem, 0.5rem) scale(1.08); }
+
+.dark .tip-card {
+  border-color: rgba(216, 180, 254, 0.22);
+  background: linear-gradient(135deg, rgba(58, 35, 93, 0.84), rgba(29, 19, 52, 0.90));
+  box-shadow: 0 18px 42px -24px rgba(0, 0, 0, 0.72), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.dark .tip-card__glow { background: radial-gradient(circle, rgba(168, 85, 247, 0.28), transparent 68%); }

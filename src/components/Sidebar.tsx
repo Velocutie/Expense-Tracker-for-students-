@@ -303,8 +303,8 @@ function SidebarInner({
             ${collapsed ? 'justify-center p-3' : 'gap-3.5 px-4 py-3'}
           `}
         >
-          <div className="w-7 h-7 rounded-lg bg-purple-100/80 dark:bg-purple-400/20 flex items-center justify-center shrink-0">
-            <User size={13} className="text-purple-700 dark:text-purple-200" />
+          <div className="w-8 h-8 rounded-xl overflow-hidden bg-purple-100/80 dark:bg-purple-400/20 flex items-center justify-center shrink-0 ring-1 ring-purple-200/70 dark:ring-purple-300/15">
+            {user?.avatarUrl ? <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" /> : <User size={14} className="text-purple-700 dark:text-purple-200" />}
           </div>
           <div
             className={`

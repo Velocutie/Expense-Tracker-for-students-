@@ -8,6 +8,7 @@ import { ArrowDownLeft, ArrowUpRight, PiggyBank, TrendingDown, TrendingUp, Plus,
 import Link from 'next/link';
 import { Tip } from '@/components/Tip';
 import { useAuth } from '@/lib/auth';
+import { SmartTips } from '@/components/SmartTips';
 
 function getMonthKey(date: Date) { return date.toISOString().slice(0, 7); }
 function getMonthLabel(mk: string) {
@@ -146,6 +147,8 @@ export default function DashboardPage() {
       {savedMoney > 0 && totalGoalTarget === 0 && (
         <Tip>You have {'\u20B9'}{savedMoney.toLocaleString('en-IN')} saved! Consider creating a savings goal to give it a purpose.</Tip>
       )}
+
+      <SmartTips />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 shadow-sm">

@@ -3,12 +3,12 @@
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { useStore } from '@/lib/store';
-import { User, Mail, LogOut, Trash2, Shield, Smartphone, Sun, Moon, Monitor, Pencil, Key, Download, Wallet, Check, X } from 'lucide-react';
+import { User, Mail, LogOut, Trash2, Shield, Smartphone, Sun, Moon, Monitor, Pencil, Key, Download, Wallet, Check, X, ImagePlus, LoaderCircle } from 'lucide-react';
 import { useState } from 'react';
 import { useTheme } from '@/lib/theme';
 
 export default function ProfilePage() {
-  const { user, signOut, updateName, updateEmail, updatePassword } = useAuth();
+  const { user, signOut, updateName, updateEmail, updatePassword, updateAvatar } = useAuth();
   const store = useStore();
   const router = useRouter();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -36,11 +36,69 @@ export default function ProfilePage() {
 
   // Export state
   const [exportFormat, setExportFormat] = useState<'csv' | 'json'>('csv');
+  const [avatarLoading, setAvatarLoading] = useState(false);
+  const [avatarMsg, setAvatarMsg] = useState('');
 
   const handleSignOut = async () => {
     await signOut();
     router.push('/login');
   };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setAvatarMsg('Please choose an image file.');
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      setAvatarMsg('Please choose an image under 8 MB.');
+      return;
+    }
+
+    setAvatarLoading(true);
+    setAvatarMsg('');
+    try {
+      const avatarUrl = await compressAvatar(file);
+      const result = await updateAvatar(avatarUrl);
+      if (result.error) setAvatarMsg(result.error);
+      else setAvatarMsg('Profile image updated');
+    } catch {
+      setAvatarMsg('Could not process that image. Please try another one.');
+    } finally {
+      setAvatarLoading(false);
+      setTimeout(() => setAvatarMsg(''), 3000);
+    }
+  };
+
+  function compressAvatar(file: File) {
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('Unable to read image'));
+      reader.onload = () => {
+        const image = new Image();
+        image.onerror = () => reject(new Error('Unable to decode image'));
+        image.onload = () => {
+          const size = 320;
+          const canvas = document.createElement('canvas');
+          canvas.width = size;
+          canvas.height = size;
+          const context = canvas.getContext('2d');
+          if (!context) return reject(new Error('Canvas unavailable'));
+          const scale = Math.max(size / image.width, size / image.height);
+          const width = image.width * scale;
+          const height = image.height * scale;
+          context.imageSmoothingEnabled = true;
+          context.imageSmoothingQuality = 'high';
+          context.drawImage(image, (size - width) / 2, (size - height) / 2, width, height);
+          resolve(canvas.toDataURL('image/webp', 0.82));
+        };
+        image.src = String(reader.result);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
 
   const handleClearData = () => {
     localStorage.removeItem('expensewise-data');
@@ -140,16 +198,29 @@ export default function ProfilePage() {
 
       {/* User Info Card */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-indigo-100 dark:bg-indigo-500/10 flex items-center justify-center">
-            <User size={28} className="text-indigo-600 dark:text-indigo-400" />
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{user?.name || 'User'}</h2>
-            <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 text-sm">
-              <Mail size={14} />
-              {user?.email || 'No email'}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="relative shrink-0">
+            <div className="w-20 h-20 rounded-[1.35rem] overflow-hidden bg-gradient-to-br from-purple-200 via-fuchsia-100 to-blue-100 dark:from-purple-900/70 dark:via-fuchsia-900/40 dark:to-blue-900/40 flex items-center justify-center ring-4 ring-purple-100/70 dark:ring-purple-400/10 shadow-[0_12px_24px_-14px_rgba(124,58,237,0.8)]">
+              {user?.avatarUrl ? (
+                <img src={user.avatarUrl} alt={`${user.name || 'User'} profile`} className="h-full w-full object-cover" />
+              ) : (
+                <User size={30} className="text-purple-600 dark:text-purple-300" />
+              )}
             </div>
+            <label htmlFor="profile-image" className="absolute -right-2 -bottom-2 inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border-2 border-white bg-purple-600 text-white shadow-lg shadow-purple-600/30 transition-all hover:-translate-y-0.5 hover:bg-purple-700 active:scale-90 dark:border-[#171126]" title="Add profile image">
+              {avatarLoading ? <LoaderCircle size={16} className="animate-spin" /> : <ImagePlus size={16} />}
+              <span className="sr-only">Add profile image</span>
+            </label>
+            <input id="profile-image" type="file" accept="image/png,image/jpeg,image/webp" onChange={handleAvatarChange} className="sr-only" disabled={avatarLoading} />
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white truncate">{user?.name || 'User'}</h2>
+            <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 text-sm truncate">
+              <Mail size={14} className="shrink-0" />
+              <span className="truncate">{user?.email || 'No email'}</span>
+            </div>
+            <p className="mt-2 text-xs text-purple-700/75 dark:text-purple-200/70">Add an image to make your finance space feel like yours.</p>
+            {avatarMsg && <p className="mt-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">{avatarMsg}</p>}
           </div>
         </div>
       </div>
