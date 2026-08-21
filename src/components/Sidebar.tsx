@@ -5,22 +5,38 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, ReceiptIndianRupee, CircleDollarSign, PiggyBank,
   Target, BarChart3, Menu, X, User, Sun, Moon, Monitor, Repeat,
-  PanelLeftClose, PanelLeftOpen
+  PanelLeftClose, PanelLeftOpen, LogOut,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useTheme } from '@/lib/theme';
 import { useAuth } from '@/lib/auth';
 
-const NAV_ITEMS = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/expenses', label: 'Expenses', icon: ReceiptIndianRupee },
-  { href: '/money-received', label: 'Money Received', icon: CircleDollarSign },
-  { href: '/saved-money', label: 'Saved Money', icon: PiggyBank },
-  { href: '/budgets', label: 'Budgets', icon: Target },
-  { href: '/savings-goals', label: 'Savings Goals', icon: Target },
-  { href: '/recurring-expenses', label: 'Recurring', icon: Repeat },
-  { href: '/insights', label: 'Insights', icon: BarChart3 },
-  { href: '/profile', label: 'Profile', icon: User },
+/* ─────────────────────────── NAV STRUCTURE ─────────────────────────── */
+
+const NAV_SECTIONS = [
+  {
+    label: 'Main',
+    items: [
+      { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+      { href: '/expenses', label: 'Expenses', icon: ReceiptIndianRupee },
+    ],
+  },
+  {
+    label: 'Trackers',
+    items: [
+      { href: '/money-received', label: 'Money Received', icon: CircleDollarSign },
+      { href: '/saved-money', label: 'Saved Money', icon: PiggyBank },
+      { href: '/budgets', label: 'Budgets', icon: Target },
+      { href: '/savings-goals', label: 'Savings Goals', icon: Target },
+      { href: '/recurring-expenses', label: 'Recurring', icon: Repeat },
+    ],
+  },
+  {
+    label: 'Analytics',
+    items: [
+      { href: '/insights', label: 'Insights', icon: BarChart3 },
+    ],
+  },
 ];
 
 const BOTTOM_NAV_ITEMS = [
@@ -37,184 +53,434 @@ const THEME_OPTIONS = [
   { value: 'system' as const, icon: Monitor, label: 'System' },
 ];
 
-export function Sidebar() {
+/* ─────────────────────────── TOOLTIP ─────────────────────────── */
+
+function Tooltip({ label }: { label: string }) {
+  return (
+    <span
+      className="
+        absolute left-full ml-3 px-2.5 py-1 text-xs font-medium
+        bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900
+        rounded-lg opacity-0 group-hover:opacity-100
+        transition-opacity duration-150 pointer-events-none
+        whitespace-nowrap z-[9999] shadow-lg
+      "
+    >
+      {label}
+    </span>
+  );
+}
+
+/* ─────────────────────────── NAV ITEM ─────────────────────────── */
+
+function NavItem({
+  href,
+  label,
+  icon: Icon,
+  isActive,
+  isCollapsed,
+}: {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+  isActive: boolean;
+  isCollapsed: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      title={isCollapsed ? label : undefined}
+      aria-label={isCollapsed ? label : undefined}
+      className={`
+        relative flex items-center gap-3 rounded-xl text-sm font-medium
+        transition-colors duration-150 group active:scale-[0.97]
+        ${isCollapsed ? 'justify-center p-2.5' : 'px-3 py-2'}
+        ${isActive
+          ? 'bg-indigo-500/10 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400'
+          : 'text-gray-600 dark:text-gray-400 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] hover:text-gray-900 dark:hover:text-gray-100'
+        }
+      `}
+    >
+      {/* Left accent bar for active item */}
+      {isActive && !isCollapsed && (
+        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-indigo-500 rounded-r-full" />
+      )}
+
+      <Icon
+        size={17}
+        className={`shrink-0 transition-colors duration-150 ${
+          isActive ? 'text-indigo-500 dark:text-indigo-400' : ''
+        }`}
+      />
+
+      {/* Label with fade */}
+      <span
+        className={`
+          whitespace-nowrap overflow-hidden leading-none
+          transition-[max-width,opacity] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]
+          ${isCollapsed ? 'max-w-0 opacity-0' : 'max-w-[180px] opacity-100'}
+        `}
+      >
+        {label}
+      </span>
+
+      {/* Tooltip when collapsed */}
+      {isCollapsed && <Tooltip label={label} />}
+    </Link>
+  );
+}
+
+/* ─────────────────────────── SIDEBAR INNER CONTENT ─────────────────────────── */
+
+function SidebarContent({
+  collapsed,
+  onCollapse,
+  showCollapseButton = true,
+}: {
+  collapsed: boolean;
+  onCollapse?: () => void;
+  showCollapseButton?: boolean;
+}) {
   const pathname = usePathname();
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
   const { theme, setTheme } = useTheme();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
 
-  // Sync collapsed state from sessionStorage after mount (client-only)
-  useEffect(() => {
-    const stored = sessionStorage.getItem('sidebar-collapsed');
-    if (stored === 'true') setCollapsed(true);
-  }, []);
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
-  // Persist collapsed state on change
-  useEffect(() => {
-    sessionStorage.setItem('sidebar-collapsed', String(collapsed));
-  }, [collapsed]);
+  return (
+    <div className="flex flex-col h-full overflow-hidden">
 
-  // Close mobile sidebar on navigation
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
-
-  const navContent = (isCollapsed: boolean) => (
-    <>
-      {/* Header */}
-      <div className={`flex items-center border-b border-gray-100 dark:border-gray-700/60 shrink-0 ${isCollapsed ? 'justify-center h-16' : 'px-5 h-16'}`}>
-        <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/25 shrink-0 transition-all duration-200">
-          <span className="text-white font-bold text-base">E</span>
+      {/* ── Header ── */}
+      <div
+        className={`
+          flex items-center shrink-0 h-[60px] border-b border-black/[0.05] dark:border-white/[0.05]
+          ${collapsed ? 'justify-center px-3' : 'px-4'}
+        `}
+      >
+        {/* Logo mark */}
+        <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/30 shrink-0">
+          <span className="text-white font-bold text-sm select-none">E</span>
         </div>
-        <div className={`flex-1 min-w-0 flex flex-col whitespace-nowrap overflow-hidden transition-all duration-200 ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[200px] opacity-100 ml-3'}`}>
-          <h1 className="text-base font-bold text-gray-900 dark:text-white leading-tight">ExpenseWise</h1>
-          <p className="text-[11px] text-gray-500 dark:text-gray-400">Student Finance</p>
+
+        {/* App name — fades out when collapsed */}
+        <div
+          className={`
+            flex-1 min-w-0 ml-2.5 overflow-hidden
+            transition-[max-width,opacity] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]
+            ${collapsed ? 'max-w-0 opacity-0' : 'max-w-[160px] opacity-100'}
+          `}
+        >
+          <p className="text-[15px] font-bold text-gray-900 dark:text-white leading-none whitespace-nowrap">
+            ExpenseWise
+          </p>
+          <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 whitespace-nowrap">
+            Student Finance
+          </p>
         </div>
+
+        {/* Collapse toggle (only on desktop variant) */}
+        {showCollapseButton && onCollapse && (
+          <button
+            onClick={onCollapse}
+            className={`
+              shrink-0 w-7 h-7 rounded-lg flex items-center justify-center
+              text-gray-400 dark:text-gray-500
+              hover:bg-black/[0.06] dark:hover:bg-white/[0.08]
+              hover:text-gray-600 dark:hover:text-gray-300
+              transition-colors duration-150
+              ${collapsed ? '' : 'ml-1'}
+            `}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {collapsed
+              ? <PanelLeftOpen size={15} />
+              : <PanelLeftClose size={15} />
+            }
+          </button>
+        )}
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
-        {NAV_ITEMS.map(item => {
-          const isActive = pathname === item.href;
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              title={isCollapsed ? item.label : undefined}
-              aria-label={isCollapsed ? item.label : undefined}
-              className={`flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-150 relative group active:scale-[0.97] ${
-                isCollapsed ? 'justify-center p-3' : 'px-3 py-2.5'
-              } ${
-                isActive
-                  ? 'bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-400'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700/50 hover:text-gray-900 dark:hover:text-white'
-              }`}
+      {/* ── Navigation sections ── */}
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 space-y-1">
+        {NAV_SECTIONS.map((section) => (
+          <div key={section.label} className="mb-1">
+            {/* Section label */}
+            <div
+              className={`
+                overflow-hidden
+                transition-[max-height,opacity] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]
+                ${collapsed ? 'max-h-0 opacity-0' : 'max-h-8 opacity-100'}
+              `}
             >
-              {/* Active indicator bar */}
-              {isActive && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-indigo-500 rounded-r-full" />
-              )}
-              <Icon size={18} className="shrink-0" />
-              <span className={`whitespace-nowrap transition-all duration-200 overflow-hidden ${isCollapsed ? 'max-w-0 opacity-0' : 'max-w-[180px] opacity-100 ml-1'}`}>
-                {item.label}
-              </span>
-              {/* Tooltip for collapsed mode */}
-              {isCollapsed && (
-                <span className="absolute left-full ml-2 px-2 py-1 text-xs font-medium bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none whitespace-nowrap z-50 shadow-lg">
-                  {item.label}
-                </span>
-              )}
-            </Link>
-          );
-        })}
+              <p className="px-3 pt-1 pb-1.5 text-[10px] font-semibold tracking-widest uppercase text-gray-400 dark:text-gray-600 select-none">
+                {section.label}
+              </p>
+            </div>
+
+            {/* Items */}
+            <div className="space-y-0.5">
+              {section.items.map((item) => (
+                <NavItem
+                  key={item.href}
+                  href={item.href}
+                  label={item.label}
+                  icon={item.icon}
+                  isActive={pathname === item.href}
+                  isCollapsed={collapsed}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+
+        {/* ── Account section ── */}
+        <div className="mb-1">
+          <div
+            className={`
+              overflow-hidden
+              transition-[max-height,opacity] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]
+              ${collapsed ? 'max-h-0 opacity-0' : 'max-h-8 opacity-100'}
+            `}
+          >
+            <p className="px-3 pt-3 pb-1.5 text-[10px] font-semibold tracking-widest uppercase text-gray-400 dark:text-gray-600 select-none">
+              Account
+            </p>
+          </div>
+
+          <div className="space-y-0.5">
+            <NavItem
+              href="/profile"
+              label="Profile"
+              icon={User}
+              isActive={pathname === '/profile'}
+              isCollapsed={collapsed}
+            />
+          </div>
+        </div>
       </nav>
 
-      {/* Theme Toggle */}
-      <div className={`px-3 pb-2 shrink-0 transition-all duration-200 overflow-hidden ${isCollapsed ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-16 opacity-100'}`}>
-        <div className="flex items-center gap-1 p-1 bg-gray-100 border border-gray-200 dark:bg-gray-800 dark:border-gray-700 rounded-xl relative">
-          {THEME_OPTIONS.map(opt => {
+      {/* ── Theme toggle (hidden when collapsed) ── */}
+      <div
+        className={`
+          px-2 shrink-0 overflow-hidden
+          transition-[max-height,opacity,padding] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]
+          ${collapsed ? 'max-h-0 opacity-0 pb-0' : 'max-h-16 opacity-100 pb-2'}
+        `}
+      >
+        <div className="flex items-center gap-1 p-1 bg-black/[0.04] dark:bg-white/[0.05] border border-black/[0.06] dark:border-white/[0.07] rounded-xl">
+          {THEME_OPTIONS.map((opt) => {
             const Icon = opt.icon;
             const isActive = theme === opt.value;
             return (
               <button
                 key={opt.value}
                 onClick={() => setTheme(opt.value)}
-                className={`flex-1 flex items-center justify-center px-2 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 z-10 ${
-                  isActive
-                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-gray-700/50'
-                }`}
+                className={`
+                  flex-1 flex items-center justify-center px-2 py-1.5 rounded-lg text-xs font-medium
+                  transition-all duration-200
+                  ${isActive
+                    ? 'bg-white dark:bg-white/[0.12] text-gray-900 dark:text-white shadow-sm ring-1 ring-black/[0.06] dark:ring-white/[0.12]'
+                    : 'text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                  }
+                `}
                 title={opt.label}
                 aria-label={`Switch to ${opt.label} theme`}
               >
-                <Icon size={13} className={isActive ? 'scale-110' : 'scale-100'} />
+                <Icon size={13} />
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* User Profile */}
-      <div className={`border-t border-gray-100 dark:border-gray-700/60 shrink-0 ${isCollapsed ? 'p-3' : 'p-3'}`}>
+      {/* ── User + Sign Out ── */}
+      <div className="border-t border-black/[0.05] dark:border-white/[0.05] shrink-0 px-2 py-2 space-y-0.5">
+        {/* Profile link */}
         <Link
           href="/profile"
-          title={isCollapsed ? user?.name || 'Profile' : undefined}
-          aria-label={isCollapsed ? 'Go to Profile' : undefined}
-          className={`flex items-center gap-3 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-700/50 transition-all duration-150 active:scale-[0.97] cursor-pointer group relative ${
-            isCollapsed ? 'justify-center p-2.5' : 'p-2.5'
-          }`}
+          title={collapsed ? (user?.name || 'Profile') : undefined}
+          className={`
+            relative flex items-center gap-3 rounded-xl
+            hover:bg-black/[0.04] dark:hover:bg-white/[0.06]
+            transition-colors duration-150 group cursor-pointer
+            ${collapsed ? 'justify-center p-2.5' : 'px-3 py-2'}
+          `}
         >
-          <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-500/15 flex items-center justify-center shrink-0">
-            <User size={15} className="text-indigo-600 dark:text-indigo-400" />
+          <div className="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center shrink-0">
+            <User size={13} className="text-indigo-600 dark:text-indigo-400" />
           </div>
-          <div className={`flex-1 min-w-0 flex flex-col whitespace-nowrap overflow-hidden transition-all duration-200 ${isCollapsed ? 'max-w-0 opacity-0' : 'max-w-[150px] opacity-100'}`}>
-            <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">{user?.name || 'User'}</p>
-            <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">{user?.email || 'Not signed in'}</p>
+          <div
+            className={`
+              flex-1 min-w-0 overflow-hidden
+              transition-[max-width,opacity] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]
+              ${collapsed ? 'max-w-0 opacity-0' : 'max-w-[140px] opacity-100'}
+            `}
+          >
+            <p className="text-xs font-semibold text-gray-900 dark:text-white truncate whitespace-nowrap">
+              {user?.name || 'User'}
+            </p>
+            <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate whitespace-nowrap">
+              {user?.email || 'Not signed in'}
+            </p>
           </div>
-          {isCollapsed && (
-            <span className="absolute left-full ml-2 px-2 py-1 text-xs font-medium bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none whitespace-nowrap z-50 shadow-lg">
-              {user?.name || 'Profile'}
-            </span>
-          )}
+          {collapsed && <Tooltip label={user?.name || 'Profile'} />}
         </Link>
+
+        {/* Sign Out */}
+        <button
+          onClick={handleSignOut}
+          title={collapsed ? 'Sign Out' : undefined}
+          className={`
+            relative w-full flex items-center gap-3 rounded-xl
+            text-rose-500 dark:text-rose-500
+            hover:bg-rose-500/[0.08] dark:hover:bg-rose-500/[0.12]
+            hover:text-rose-600 dark:hover:text-rose-400
+            transition-colors duration-150 group
+            ${collapsed ? 'justify-center p-2.5' : 'px-3 py-2'}
+          `}
+          aria-label="Sign out"
+        >
+          <LogOut size={15} className="shrink-0" />
+          <span
+            className={`
+              text-sm font-medium whitespace-nowrap overflow-hidden
+              transition-[max-width,opacity] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]
+              ${collapsed ? 'max-w-0 opacity-0' : 'max-w-[120px] opacity-100'}
+            `}
+          >
+            Sign Out
+          </span>
+          {collapsed && <Tooltip label="Sign Out" />}
+        </button>
       </div>
-    </>
+    </div>
   );
+}
+
+/* ─────────────────────────── MAIN EXPORT ─────────────────────────── */
+
+export function Sidebar() {
+  const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+
+  // Restore collapsed state from sessionStorage (client-only)
+  useEffect(() => {
+    const stored = sessionStorage.getItem('sidebar-collapsed');
+    if (stored === 'true') setCollapsed(true);
+  }, []);
+
+  // Persist collapsed state
+  useEffect(() => {
+    sessionStorage.setItem('sidebar-collapsed', String(collapsed));
+  }, [collapsed]);
+
+  // Close mobile drawer on navigate
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
 
   return (
     <>
-      {/* Desktop sidebar */}
+      {/* ════════════════════════ DESKTOP SIDEBAR ════════════════════════ */}
       <aside
-        className={`hidden md:flex flex-col border-r border-gray-200 dark:border-gray-700/60 bg-white dark:bg-gray-900 shrink-0 transition-all duration-200 overflow-visible relative`}
+        className={`
+          hidden md:flex flex-col shrink-0 relative
+          transition-[width] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]
+        `}
         style={{ width: collapsed ? '64px' : '240px' }}
       >
-        {navContent(collapsed)}
-
-        {/* Collapse toggle button */}
-        <button
-          onClick={() => setCollapsed(c => !c)}
-          className="absolute -right-3 top-[60px] w-6 h-6 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-150 hover:bg-gray-50 dark:hover:bg-slate-700 z-50 shrink-0"
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        {/* Glass card wrapper — sits inset from the viewport edge */}
+        <div
+          className={`
+            flex flex-col
+            m-2 rounded-2xl overflow-hidden
+            bg-white/80 dark:bg-[#141C2D]/75
+            backdrop-blur-xl
+            border border-black/[0.07] dark:border-white/[0.07]
+            shadow-[0_2px_16px_0_rgba(0,0,0,0.06)] dark:shadow-[0_2px_16px_0_rgba(0,0,0,0.35)]
+            transition-[width] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]
+            absolute inset-y-0
+          `}
+          style={{ width: collapsed ? 'calc(64px - 16px)' : 'calc(240px - 16px)' }}
         >
-          {collapsed
-            ? <PanelLeftOpen size={13} className="text-gray-500 dark:text-gray-400" />
-            : <PanelLeftClose size={13} className="text-gray-500 dark:text-gray-400" />
-          }
-        </button>
+          <SidebarContent
+            collapsed={collapsed}
+            onCollapse={() => setCollapsed((c) => !c)}
+            showCollapseButton
+          />
+        </div>
       </aside>
 
-      {/* Mobile menu toggle button */}
+      {/* ════════════════════════ MOBILE HAMBURGER ════════════════════════ */}
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 w-10 h-10 rounded-xl bg-white dark:bg-gray-800 shadow-md flex items-center justify-center border border-gray-200 dark:border-gray-700 active:scale-95 transition-all duration-150 hover:bg-gray-50 dark:hover:bg-slate-700/80"
+        className="
+          md:hidden fixed top-3 left-3 z-50
+          w-10 h-10 rounded-xl
+          bg-white/90 dark:bg-[#141C2D]/90
+          backdrop-blur-md
+          shadow-md border border-black/[0.07] dark:border-white/[0.07]
+          flex items-center justify-center
+          active:scale-95 transition-all duration-150
+          hover:bg-white dark:hover:bg-[#1a2438]
+        "
         aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
       >
-        {mobileOpen ? <X size={20} className="text-gray-700 dark:text-gray-200" /> : <Menu size={20} className="text-gray-700 dark:text-gray-200" />}
+        {mobileOpen
+          ? <X size={18} className="text-gray-700 dark:text-gray-200" />
+          : <Menu size={18} className="text-gray-700 dark:text-gray-200" />
+        }
       </button>
 
-      {/* Mobile overlay */}
-      {mobileOpen && (
-        <div
-          className="md:hidden fixed inset-0 bg-black/30 dark:bg-black/60 z-30 backdrop-blur-sm"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
+      {/* ════════════════════════ MOBILE OVERLAY ════════════════════════ */}
+      <div
+        className={`
+          md:hidden fixed inset-0 z-30
+          bg-black/40 dark:bg-black/60 backdrop-blur-sm
+          transition-opacity duration-200
+          ${mobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}
+        `}
+        onClick={() => setMobileOpen(false)}
+      />
 
-      {/* Mobile sidebar drawer */}
+      {/* ════════════════════════ MOBILE DRAWER ════════════════════════ */}
       <aside
-        className={`md:hidden fixed inset-y-0 left-0 w-64 flex flex-col border-r border-gray-200 dark:border-gray-700/60 bg-white dark:bg-gray-900 z-40 transform transition-transform duration-250 ease-out overflow-hidden`}
-        style={{ transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)' }}
+        className={`
+          md:hidden fixed inset-y-0 left-0 z-40 w-64
+          transition-transform duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]
+          p-2
+          ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}
       >
-        {navContent(false)}
+        <div
+          className="
+            flex flex-col h-full rounded-2xl overflow-hidden
+            bg-white/90 dark:bg-[#141C2D]/90
+            backdrop-blur-xl
+            border border-black/[0.07] dark:border-white/[0.07]
+            shadow-[0_4px_32px_0_rgba(0,0,0,0.12)] dark:shadow-[0_4px_32px_0_rgba(0,0,0,0.5)]
+          "
+        >
+          <SidebarContent collapsed={false} showCollapseButton={false} />
+        </div>
       </aside>
 
-      {/* Mobile bottom navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-t border-gray-200 dark:border-gray-700/60 z-40 safe-bottom">
-        <div className="flex items-center justify-around px-2 py-2">
-          {BOTTOM_NAV_ITEMS.map(item => {
+      {/* ════════════════════════ MOBILE BOTTOM NAV ════════════════════════ */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 safe-bottom">
+        <div
+          className="
+            mx-2 mb-2 flex items-center justify-around px-2 py-2
+            bg-white/90 dark:bg-[#141C2D]/90
+            backdrop-blur-xl
+            border border-black/[0.07] dark:border-white/[0.07]
+            rounded-2xl shadow-lg dark:shadow-[0_4px_24px_0_rgba(0,0,0,0.4)]
+          "
+        >
+          {BOTTOM_NAV_ITEMS.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
             return (
@@ -222,11 +488,14 @@ export function Sidebar() {
                 key={item.href}
                 href={item.href}
                 aria-label={item.label}
-                className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all duration-150 min-w-[56px] active:scale-95 ${
-                  isActive
+                className={`
+                  flex flex-col items-center gap-1 px-3 py-2 rounded-xl
+                  transition-all duration-150 min-w-[52px] active:scale-95
+                  ${isActive
                     ? 'text-indigo-600 dark:text-indigo-400'
                     : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
-                }`}
+                  }
+                `}
               >
                 <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
                 <span className="text-[10px] font-medium">{item.label}</span>
