@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${inter.variable} h-full`} suppressHydrationWarning>
-      <body className="h-full bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-[family-name:var(--font-inter)] transition-colors duration-200">
+      <body className="h-full bg-transparent text-gray-900 dark:text-gray-100 font-[family-name:var(--font-inter)] transition-colors duration-200">
         <ThemeProvider>
           <AuthProvider>
             {children}

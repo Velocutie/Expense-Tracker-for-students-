@@ -3,6 +3,8 @@
 import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
+import { AmbientBackground } from '@/components/AmbientBackground';
+import { ExpenseWiseMark } from '@/components/ExpenseWiseBrand';
 
 const PUBLIC_PATHS = ['/login', '/signup'];
 
@@ -30,12 +32,11 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   // Show loading spinner while checking auth
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/20 animate-pulse">
-            <span className="text-white font-bold text-xl">E</span>
-          </div>
-          <div className="w-8 h-8 border-3 border-indigo-200 dark:border-indigo-800 border-t-indigo-600 rounded-full animate-spin" />
+      <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-transparent">
+        <AmbientBackground />
+        <div className="relative z-10 flex flex-col items-center gap-4 rounded-[2rem] border border-purple-500/15 bg-white/65 dark:bg-[#171126]/70 px-10 py-9 shadow-[0_24px_60px_-28px_rgba(76,29,149,0.55)] backdrop-blur-xl">
+          <ExpenseWiseMark size="lg" className="animate-bounce-gentle" />
+          <div className="w-8 h-8 border-[3px] border-purple-200 dark:border-purple-800 border-t-purple-600 dark:border-t-purple-300 rounded-full animate-spin" />
         </div>
       </div>
     );

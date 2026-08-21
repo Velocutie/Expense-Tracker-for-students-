@@ -10,6 +10,7 @@ import {
 import { useState, useEffect } from 'react';
 import { useTheme } from '@/lib/theme';
 import { useAuth } from '@/lib/auth';
+import { ExpenseWiseBrand } from '@/components/ExpenseWiseBrand';
 
 /* ─────────────────────── CONSTANTS ─────────────────────── */
 
@@ -100,7 +101,7 @@ function NavItem({
         transition-colors duration-150 group active:scale-[0.97]
         ${isCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2'}
         ${isActive
-          ? 'bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-semibold ring-1 ring-indigo-500/20 dark:ring-indigo-400/20'
+          ? 'bg-purple-500/[0.11] dark:bg-purple-400/[0.16] text-purple-700 dark:text-purple-200 font-semibold ring-1 ring-purple-500/20 dark:ring-purple-300/20 shadow-[0_8px_18px_-14px_rgba(124,58,237,0.9)]'
           : 'text-gray-600 dark:text-gray-400 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] hover:text-gray-900 dark:hover:text-gray-100'
         }
       `}
@@ -109,7 +110,7 @@ function NavItem({
       {isActive && (
         <span
           className={`
-            absolute left-0 top-1/2 -translate-y-1/2 bg-indigo-500 dark:bg-indigo-400 rounded-r-full
+            absolute left-0 top-1/2 -translate-y-1/2 bg-gradient-to-b from-fuchsia-400 via-purple-500 to-violet-600 dark:from-fuchsia-300 dark:via-purple-400 dark:to-violet-500 rounded-r-full shadow-[0_0_12px_rgba(168,85,247,0.8)]
             ${isCollapsed ? 'w-1 h-4' : 'w-0.5 h-5'}
           `}
         />
@@ -117,7 +118,7 @@ function NavItem({
 
       <Icon
         size={17}
-        className={`shrink-0 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : ''}`}
+        className={`shrink-0 ${isActive ? 'text-purple-600 dark:text-purple-200' : ''}`}
       />
 
       {/* Label */}
@@ -174,25 +175,8 @@ function SidebarInner({
         `}
       >
         {/* Logo & Brand Slot */}
-        <div className={`flex items-center min-w-0 ${collapsed ? 'justify-center' : 'gap-2.5 flex-1 overflow-hidden'}`}>
-          <div
-            className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-600/30 shrink-0"
-            title={collapsed ? 'ExpenseWise' : undefined}
-          >
-            <span className="text-white font-bold text-sm select-none">E</span>
-          </div>
-
-          {/* App name — slides away when collapsed */}
-          {!collapsed && (
-            <div className="min-w-0 overflow-hidden transition-opacity duration-200">
-              <p className="text-[15px] font-bold text-gray-900 dark:text-white leading-none whitespace-nowrap">
-                ExpenseWise
-              </p>
-              <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 whitespace-nowrap">
-                Student Finance
-              </p>
-            </div>
-          )}
+        <div className={`flex items-center min-w-0 ${collapsed ? 'justify-center' : 'gap-2.5 flex-1 overflow-hidden'}`} title={collapsed ? 'ExpenseWise' : undefined}>
+          <ExpenseWiseBrand size="sm" showName={!collapsed} showTagline={!collapsed} />
         </div>
 
         {/* Toggle button */}
@@ -315,8 +299,8 @@ function SidebarInner({
             ${collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2'}
           `}
         >
-          <div className="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center shrink-0">
-            <User size={13} className="text-indigo-600 dark:text-indigo-400" />
+          <div className="w-7 h-7 rounded-lg bg-purple-100/80 dark:bg-purple-400/20 flex items-center justify-center shrink-0">
+            <User size={13} className="text-purple-700 dark:text-purple-200" />
           </div>
           <div
             className={`
@@ -414,10 +398,10 @@ export function Sidebar() {
           className="
             flex flex-col absolute top-2 bottom-2 left-2
             rounded-2xl
-            bg-white/80 dark:bg-[#141C2D]/75
+            bg-white/75 dark:bg-[#171126]/78
             backdrop-blur-xl
-            border border-black/[0.07] dark:border-white/[0.08]
-            shadow-[0_2px_16px_0_rgba(0,0,0,0.06)]
+            border border-purple-500/[0.12] dark:border-purple-200/[0.13]
+            shadow-[0_18px_42px_-24px_rgba(76,29,149,0.42),0_2px_12px_rgba(76,29,149,0.08)]
             dark:shadow-[0_2px_16px_0_rgba(0,0,0,0.35)]
           "
           style={{
@@ -439,7 +423,7 @@ export function Sidebar() {
         className="
           md:hidden fixed top-3 left-3 z-50
           w-10 h-10 rounded-xl
-          bg-white/90 dark:bg-[#141C2D]/90
+          bg-white/82 dark:bg-[#171126]/86
           backdrop-blur-md
           shadow-md border border-black/[0.07] dark:border-white/[0.07]
           flex items-center justify-center
@@ -477,9 +461,9 @@ export function Sidebar() {
         <div
           className="
             flex flex-col h-full rounded-2xl
-            bg-white/95 dark:bg-[#141C2D]/95
+            bg-white/92 dark:bg-[#171126]/94
             backdrop-blur-xl
-            border border-black/[0.07] dark:border-white/[0.08]
+            border border-purple-500/[0.12] dark:border-purple-200/[0.13]
             shadow-[0_4px_32px_0_rgba(0,0,0,0.12)]
             dark:shadow-[0_4px_32px_0_rgba(0,0,0,0.5)]
           "
@@ -493,9 +477,9 @@ export function Sidebar() {
         <div
           className="
             mx-2 mb-2 flex items-center justify-around px-2 py-2
-            bg-white/90 dark:bg-[#141C2D]/90
+            bg-white/82 dark:bg-[#171126]/86
             backdrop-blur-xl
-            border border-black/[0.07] dark:border-white/[0.08]
+            border border-purple-500/[0.12] dark:border-purple-200/[0.13]
             rounded-2xl
             shadow-lg dark:shadow-[0_4px_24px_0_rgba(0,0,0,0.4)]
           "
@@ -512,7 +496,7 @@ export function Sidebar() {
                   flex flex-col items-center gap-1 px-3 py-2 rounded-xl
                   transition-all duration-150 min-w-[52px] active:scale-95
                   ${isActive
-                    ? 'text-indigo-600 dark:text-indigo-400'
+                    ? 'text-purple-700 dark:text-purple-200'
                     : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
                   }
                 `}

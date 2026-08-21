@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
+import { AmbientBackground } from '@/components/AmbientBackground';
+import { ExpenseWiseBrand } from '@/components/ExpenseWiseBrand';
 import { Eye, EyeOff, Mail, Lock, ArrowRight, Sparkles, TrendingUp, Wallet } from 'lucide-react';
 
 export default function LoginPage() {
@@ -32,33 +34,14 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex relative overflow-hidden">
-      {/* Animated Background Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 animate-gradient-xy" />
-
-      {/* Floating Orbs */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-400/30 rounded-full blur-3xl animate-float" />
-      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-pink-400/30 rounded-full blur-3xl animate-float-delayed" />
-      <div className="absolute top-1/2 left-1/2 w-72 h-72 bg-indigo-400/30 rounded-full blur-3xl animate-float-slow" />
-
-      {/* Grid Pattern Overlay */}
-      <div className="absolute inset-0 opacity-10" style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-      }} />
+    <div className="auth-shell relative flex min-h-screen overflow-hidden">
+      <AmbientBackground variant="auth" />
 
       {/* Left Side - Branding (Desktop) */}
       <div className="hidden lg:flex lg:w-1/2 relative z-10 items-center justify-center p-12 xl:p-16">
         <div className="max-w-lg animate-fade-in-left">
           {/* Logo */}
-          <div className="flex items-center gap-3 mb-12">
-            <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg animate-bounce-gentle">
-              <span className="text-white font-bold text-2xl">E</span>
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white">ExpenseWise</h1>
-              <p className="text-white/70 text-sm">Student Finance Manager</p>
-            </div>
-          </div>
+          <ExpenseWiseBrand size="lg" light className="mb-12 animate-bounce-gentle" />
 
           {/* Headline */}
           <h2 className="text-4xl xl:text-5xl font-bold text-white leading-tight mb-6">
@@ -94,17 +77,9 @@ export default function LoginPage() {
 
       {/* Right Side - Form */}
       <div className="flex-1 flex items-center justify-center p-6 sm:p-8 relative z-10">
-        <div className="w-full max-w-md bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-3xl shadow-2xl p-8 sm:p-10 animate-fade-in-right border border-white/20">
+        <div className="w-full max-w-md bg-white/88 dark:bg-[#130d23]/86 backdrop-blur-2xl rounded-[2rem] shadow-[0_30px_80px_-28px_rgba(40,12,75,0.62)] p-8 sm:p-10 animate-fade-in-right border border-white/35 dark:border-purple-200/15">
           {/* Mobile Logo */}
-          <div className="lg:hidden flex items-center gap-3 mb-8 animate-fade-in-down">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/20">
-              <span className="text-white font-bold text-xl">E</span>
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">ExpenseWise</h1>
-              <p className="text-gray-500 dark:text-gray-400 text-xs">Student Finance</p>
-            </div>
-          </div>
+          <ExpenseWiseBrand size="md" className="lg:hidden mb-8 animate-fade-in-down" />
 
           {/* Welcome Text */}
           <div className="mb-8 animate-fade-in-down" style={{ animationDelay: '0.1s' }}>
@@ -127,14 +102,14 @@ export default function LoginPage() {
             <div className="animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
               <div className="relative group">
-                <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
+                <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-purple-500 transition-colors" />
                 <input
                   id="email"
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   placeholder="you@college.edu"
-                  className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white dark:focus:bg-gray-700 outline-none transition-all duration-300"
+                  className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:bg-white dark:focus:bg-gray-700 outline-none transition-all duration-300"
                   required
                 />
               </div>
@@ -143,14 +118,14 @@ export default function LoginPage() {
             <div className="animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Password</label>
               <div className="relative group">
-                <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
+                <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-purple-500 transition-colors" />
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="Enter your password"
-                  className="w-full pl-12 pr-12 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white dark:focus:bg-gray-700 outline-none transition-all duration-300"
+                  className="w-full pl-12 pr-12 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:bg-white dark:focus:bg-gray-700 outline-none transition-all duration-300"
                   required
                 />
                 <button
@@ -167,7 +142,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-all duration-300 shadow-lg shadow-indigo-600/25 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] hover:shadow-xl hover:shadow-indigo-600/30"
+                className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700 transition-all duration-300 shadow-lg shadow-purple-600/25 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] hover:shadow-xl hover:shadow-purple-600/35"
               >
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -210,7 +185,7 @@ export default function LoginPage() {
           {/* Sign Up Link */}
           <p className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400 animate-fade-in-up" style={{ animationDelay: '0.7s' }}>
             Don&apos;t have an account?{' '}
-            <Link href="/signup" className="font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors">
+            <Link href="/signup" className="font-semibold text-purple-700 dark:text-purple-300 hover:text-purple-800 dark:hover:text-purple-200 transition-colors">
               Create account
             </Link>
           </p>
