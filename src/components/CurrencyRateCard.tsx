@@ -91,8 +91,8 @@ export function CurrencyRateCard() {
         ) : state ? (
           <div className="flex items-end justify-between gap-3">
             <div>
-              <p className="text-xl font-bold tracking-[-0.03em] text-purple-950 dark:text-white">₹1 = ${state.rate.toFixed(4)}</p>
-              <p className="mt-1 text-xs text-purple-900/65 dark:text-purple-100/65">$1 ≈ ₹{(1 / state.rate).toFixed(2)}</p>
+              <p className="text-xl font-bold tracking-[-0.03em] text-purple-950 dark:text-white">$1 ≈ ₹{(1 / state.rate).toFixed(2)}</p>
+              <p className="mt-1 text-xs text-purple-900/65 dark:text-purple-100/65">₹1 ≈ ${state.rate.toFixed(4)}</p>
             </div>
             <div className="text-right text-[10px] text-purple-800/55 dark:text-purple-100/55">
               <div className="flex items-center justify-end gap-1"><Clock3 size={11} /> {state.date}</div>
