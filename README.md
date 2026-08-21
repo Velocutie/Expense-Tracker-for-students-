@@ -44,6 +44,7 @@ It tracks money received (from parents, scholarships, freelance work), expenses 
 | **React DOM** | 19.2.8 | DOM rendering for React components |
 | **TypeScript** | 5.x | Static type checking for JavaScript, catching errors at compile time |
 | **Tailwind CSS** | 4.3.3 | Utility-first CSS framework for rapid UI development |
+| **Supabase** | — | Backend platform providing PostgreSQL, authentication, APIs, and Row Level Security |
 | **Node.js** | 24.x | JavaScript runtime for build tooling and development server |
 
 ---
@@ -59,6 +60,7 @@ It tracks money received (from parents, scholarships, freelance work), expenses 
 | `react-dom` | 19.2.8 | Bridges React to the browser DOM. Handles rendering `<RootLayout>` and all page components |
 | `lucide-react` | 1.33.0 | Beautiful, consistent SVG icon library. Used for all UI icons (menu, trash, plus, charts, category icons, etc.) instead of emoji |
 | `recharts` | 3.10.1 | Charting library built on D3.js. Used for bar charts (daily spending, monthly trends) and pie charts (category breakdowns) |
+| `@supabase/supabase-js` | current | JavaScript client used to connect ExpenseWise to its existing Supabase project |
 
 ### Dev Dependencies
 
@@ -96,18 +98,27 @@ The project uses Next.js **App Router** (not Pages Router). This means:
 - All routes live under `src/app/`
 - Each folder with a `page.tsx` file becomes a route
 - `layout.tsx` wraps all pages with shared UI (sidebar, store provider)
-- All pages are **Client Components** (`'use client'`) because they use React hooks and localStorage
+- Interactive pages use **Client Components** (`'use client'`) where required for React hooks, authentication/session state, forms, charts, and Supabase-backed data
 
 ### Client-Side Rendering
 
-All pages use `'use client'` directive because they depend on:
-- `localStorage` for data persistence
+Interactive pages use `'use client'` because they depend on:
 - React state (`useState`, `useEffect`)
+- Supabase authentication/session state
 - Interactive UI (modals, forms, charts)
+- Client-side data fetching and updates
 
-### No Backend / No Database
+### Backend & Database
 
-The app runs entirely in the browser. All data is stored in **localStorage** under the key `expensewise-data`. Legacy data from the previous version (`expense-tracker-data`) is automatically migrated on first load.
+ExpenseWise uses **Supabase** as its backend and PostgreSQL database.
+
+Supabase provides:
+- **Authentication** for student accounts and sessions
+- **PostgreSQL** for persistent financial data
+- **Row Level Security (RLS)** to restrict users to their own records
+- APIs used by the application to create, read, update, and delete data
+
+Financial data is not intended to rely on browser localStorage as the source of truth. The production app persists data in Supabase and loads the authenticated user's records when the application starts.
 
 ---
 
@@ -195,7 +206,8 @@ expense-tracker-temp/
 │   │   └── Sidebar.tsx             # Navigation sidebar (desktop + mobile)
 │   └── lib/
 │       ├── types.ts                # TypeScript interfaces and constants
-│       └── store.tsx               # React Context store with localStorage
+│       ├── store.tsx               # React Context/data layer
+│       └── supabase.ts             # Supabase client configuration
 ├── public/                         # Static assets (favicon, etc.)
 ├── package.json                    # Dependencies and scripts
 ├── package-lock.json               # Locked dependency versions
@@ -322,23 +334,29 @@ interface AppSettings {
 
 ## State Management
 
-### React Context + localStorage
+### React Context + Supabase
 
-The app uses **React Context API** for global state management, implemented in `src/lib/store.tsx`:
+The app uses **React Context API** for application state management, implemented in `src/lib/store.tsx`:
 
-- **`StoreProvider`** — Wraps the entire app, provides all state and methods via context
+- **`StoreProvider`** — Wraps the application and provides shared state and data operations
 - **`useStore()`** — Custom hook to access the store from any component
+- **Supabase** — Provides persistent storage and authenticated data access
+- **Supabase Auth** — Provides the current user/session used for user-scoped records
+- **Row Level Security (RLS)** — Enforces database-level access control for user-owned data
 
 **Data persistence:**
-- All data is serialized to JSON and stored in `localStorage` under key `expensewise-data`
-- Data is loaded on initial render and saved on every state change
-- Legacy data from the previous version (key: `expense-tracker-data`) is automatically migrated
+- Financial records are stored in the existing Supabase PostgreSQL database
+- Data is loaded from Supabase when the authenticated application session is restored
+- Create/update/delete operations write back to Supabase
+- React state is used for UI updates, but Supabase remains the source of truth
+- Browser localStorage is not the primary persistence mechanism for financial records
 
 **Store methods include:**
 - CRUD operations for all data types (add, delete, update)
 - Computed helpers (`getTotalReceived`, `getTotalExpenses`, `getMoneyLeft`, `getCurrentSavedMoney`, `getSpentByCategory`)
 - Month-aware filtering
 - Validation (e.g., can't remove more saved money than exists)
+- User/session-aware loading of persistent data
 
 ---
 
@@ -430,7 +448,7 @@ Routes are file-system based under `src/app/`:
 | `/savings-goals` | `src/app/savings-goals/page.tsx` | Savings goals |
 | `/insights` | `src/app/insights/page.tsx` | Spending insights |
 
-All pages are **statically generated** at build time but render client-side due to `'use client'` directive (needed for localStorage and hooks).
+Routes use the Next.js App Router. Interactive pages use client components where needed for authentication state, forms, charts, and Supabase-backed application state.
 
 ---
 
@@ -518,7 +536,7 @@ The app targets modern browsers:
 **Features used:**
 - CSS Grid & Flexbox
 - CSS Custom Properties
-- `localStorage` API
+- Browser storage APIs may be used for non-financial UI preferences
 - `IntersectionObserver` (via Recharts)
 - Modern JavaScript (async/await, optional chaining, nullish coalescing)
 
@@ -526,20 +544,28 @@ The app targets modern browsers:
 
 ## Data Persistence
 
-### localStorage
+### Supabase + PostgreSQL
 
-All data persists in the browser's `localStorage`:
+Financial data is persisted in the application's existing **Supabase PostgreSQL database**.
 
-| Key | Contents |
-|-----|----------|
-| `expensewise-data` | All app data (expenses, money received, budgets, saved money, savings goals, settings) |
-| `expense-tracker-data` | Legacy data from previous version (auto-migrated) |
+| Supabase table | Purpose |
+|----------------|---------|
+| `expenses` | Student expenses |
+| `money_received` | Money received from parents and other sources |
+| `saved_money_entries` | Saved-money tracking history |
+| `budgets` | Budget limits and periods |
+| `savings_goals` | Savings targets and progress |
+| `recurring_expenses` | Recurring expense records |
 
-**Important notes:**
-- Data stays in the browser — no server-side storage
-- Data does NOT sync across devices
-- Clearing browser data will delete all app data
-- The app gracefully handles missing/corrupt data
+**Authentication & security:**
+- Supabase Auth identifies the signed-in user
+- User-owned records are associated with the authenticated user
+- Row Level Security (RLS) restricts access to the current user's data
+- Financial data persists across refreshes, browsers, and Vercel deployments because the database is remote
+
+**Local state:**
+- React state is used for rendering and immediate UI updates
+- Browser storage may be used for non-financial UI preferences, but it is not the source of truth for financial records
 
 ---
 
