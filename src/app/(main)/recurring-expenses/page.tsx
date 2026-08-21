@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { useStore } from '@/lib/store';
 import { EXPENSE_CATEGORIES } from '@/lib/store';
-import { Plus, Trash2, X, Pencil, Repeat } from 'lucide-react';
+import { Plus, Trash2, Pencil, Repeat } from 'lucide-react';
 import { Tip } from '@/components/Tip';
+import { Modal } from '@/components/Modal';
 
 const FREQUENCIES = [
   { value: 'monthly' as const, label: 'Monthly' },
@@ -72,45 +73,42 @@ export default function RecurringExpensesPage() {
 
       <Tip>Subscriptions are easy to forget. List them all here so you know exactly what you&apos;re paying every month.</Tip>
 
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl border border-gray-100 dark:border-gray-700 animate-modal-in">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">{editingId ? 'Edit Recurring Expense' : 'Add Recurring Expense'}</h2>
-              <button onClick={resetForm} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg active:scale-90 transition-all"><X size={18} /></button>
-            </div>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
-                <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Netflix, Gym membership" className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-colors" required />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount</label>
-                <input type="number" step="0.01" min="0.01" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-lg transition-colors" required />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
-                <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-colors">
-                  {EXPENSE_CATEGORIES.map(cat => <option key={cat.name} value={cat.name}>{cat.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Frequency</label>
-                <div className="flex rounded-xl overflow-hidden border border-gray-200 dark:border-gray-600">
-                  {FREQUENCIES.map(f => (
-                    <button key={f.value} type="button" onClick={() => setForm(fr => ({ ...fr, frequency: f.value }))} className={`flex-1 py-2.5 text-sm font-medium transition-all active:scale-95 ${form.frequency === f.value ? 'bg-indigo-500 text-white' : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'}`}>{f.label}</button>
-                  ))}
-                </div>
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={resetForm} className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-95 transition-all">Cancel</button>
-                <button type="submit" disabled={submitting} className="flex-1 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 active:scale-95 transition-all disabled:opacity-60">{submitting ? 'Saving…' : editingId ? 'Update' : 'Add'}</button>
-              </div>
-              {submitError && <p className="text-sm text-red-600 dark:text-red-400 text-center">{submitError}</p>}
-            </form>
+      <Modal
+        open={showForm}
+        onClose={resetForm}
+        title={editingId ? 'Edit Recurring Expense' : 'Add Recurring Expense'}
+        titleId="recurring-modal-title"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
+            <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Netflix, Gym membership" className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-colors" required />
           </div>
-        </div>
-      )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount</label>
+            <input type="number" step="0.01" min="0.01" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-lg transition-colors" required />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
+            <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-colors">
+              {EXPENSE_CATEGORIES.map(cat => <option key={cat.name} value={cat.name}>{cat.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Frequency</label>
+            <div className="flex rounded-xl overflow-hidden border border-gray-200 dark:border-gray-600">
+              {FREQUENCIES.map(f => (
+                <button key={f.value} type="button" onClick={() => setForm(fr => ({ ...fr, frequency: f.value }))} className={`flex-1 py-2.5 text-sm font-medium transition-all active:scale-95 ${form.frequency === f.value ? 'bg-indigo-500 text-white' : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'}`}>{f.label}</button>
+              ))}
+            </div>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={resetForm} className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-95 transition-all">Cancel</button>
+            <button type="submit" disabled={submitting} className="flex-1 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 active:scale-95 transition-all disabled:opacity-60">{submitting ? 'Saving…' : editingId ? 'Update' : 'Add'}</button>
+          </div>
+          {submitError && <p className="text-sm text-red-600 dark:text-red-400 text-center">{submitError}</p>}
+        </form>
+      </Modal>
 
       <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
         {recurringExpenses.length > 0 ? (
@@ -119,7 +117,7 @@ export default function RecurringExpensesPage() {
               const cat = EXPENSE_CATEGORIES.find(c => c.name === r.category);
               const Icon = cat?.icon;
               return (
-                <div key={r.id} className="flex items-center gap-3 p-4 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-all">
+                <div key={r.id} className="flex items-center gap-3 p-4 hover:bg-gray-50/80 dark:hover:bg-white/[0.03] transition-colors">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: (cat?.color || '#78716c') + '15' }}>
                     {Icon ? <Icon size={18} style={{ color: cat?.color }} /> : <Repeat size={18} className="text-gray-400" />}
                   </div>

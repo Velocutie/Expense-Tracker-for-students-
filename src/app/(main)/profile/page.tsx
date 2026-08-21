@@ -356,13 +356,13 @@ export default function ProfilePage() {
             <div className="px-6 py-4 bg-red-50 dark:bg-red-500/5">
               <p className="text-sm text-red-700 dark:text-red-400 mb-3">Are you sure? This cannot be undone.</p>
               <div className="flex gap-3">
-                <button onClick={() => setShowClearConfirm(false)} className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 active:scale-95 transition-all">Cancel</button>
+                <button onClick={() => setShowClearConfirm(false)} className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 active:scale-95 transition-all">Cancel</button>
                 <button onClick={handleClearData} className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-xl hover:bg-red-700 active:scale-95 transition-all">Yes, clear everything</button>
               </div>
             </div>
           )}
 
-          <button onClick={handleSignOut} className="w-full flex items-center gap-3 px-6 py-4 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-all text-left active:scale-[0.99]">
+          <button onClick={handleSignOut} className="w-full flex items-center gap-3 px-6 py-4 hover:bg-gray-100/80 dark:hover:bg-white/[0.03] transition-colors text-left active:scale-[0.99]">
             <LogOut size={18} className="text-gray-400" />
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-900 dark:text-white">Sign Out</p>

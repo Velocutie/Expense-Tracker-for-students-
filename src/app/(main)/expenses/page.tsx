@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { useStore } from '@/lib/store';
 import { EXPENSE_CATEGORIES } from '@/lib/store';
-import { Plus, Trash2, X, Pencil } from 'lucide-react';
+import { Plus, Trash2, Pencil } from 'lucide-react';
 import { Tip } from '@/components/Tip';
+import { Modal } from '@/components/Modal';
 
 function getMonthKey(d: string) { return d.slice(0, 7); }
 
@@ -64,7 +65,7 @@ export default function ExpensesPage() {
           const [y, mo] = m.split('-');
           const label = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(mo)-1] + ' ' + y;
           return (
-            <button key={m} onClick={() => setMonth(m)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all active:scale-95 ${month === m ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>{label}</button>
+            <button key={m} onClick={() => setMonth(m)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all active:scale-95 ${month === m ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/70'}`}>{label}</button>
           );
         })}
       </div>
@@ -76,49 +77,46 @@ export default function ExpensesPage() {
 
       <Tip>Track every expense, no matter how small. Those \'chai\' and \'samosa\' purchases add up fast!</Tip>
 
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl border border-gray-100 dark:border-gray-700 animate-modal-in">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">{editingId ? 'Edit Expense' : 'Add Expense'}</h2>
-              <button onClick={resetForm} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg active:scale-90 transition-all"><X size={18} /></button>
-            </div>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount</label>
-                <input type="number" step="0.01" min="0.01" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-lg transition-colors" required />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
-                <div className="grid grid-cols-4 gap-2 max-h-36 overflow-y-auto">
-                  {EXPENSE_CATEGORIES.map(cat => {
-                    const Icon = cat.icon;
-                    return (
-                      <button key={cat.name} type="button" onClick={() => setForm(f => ({ ...f, category: cat.name }))} className={`p-2 rounded-xl text-center text-xs font-medium transition-all active:scale-95 ${form.category === cat.name ? 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 ring-2 ring-indigo-500' : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'}`}>
-                        <Icon size={16} className="mx-auto mb-0.5" style={{ color: cat.color }} />
-                        <span className="block truncate">{cat.name.split('/')[0].trim()}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-                <input type="text" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="e.g. Lunch at cafeteria" className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-colors" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-colors" required />
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={resetForm} className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-95 transition-all">Cancel</button>
-                <button type="submit" disabled={submitting} className="flex-1 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 active:scale-95 transition-all disabled:opacity-60">{submitting ? 'Saving…' : editingId ? 'Update' : 'Add Expense'}</button>
-              </div>
-              {submitError && <p className="text-sm text-red-600 dark:text-red-400 text-center">{submitError}</p>}
-            </form>
+      <Modal
+        open={showForm}
+        onClose={resetForm}
+        title={editingId ? 'Edit Expense' : 'Add Expense'}
+        titleId="expense-modal-title"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount</label>
+            <input type="number" step="0.01" min="0.01" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-lg transition-colors" required />
           </div>
-        </div>
-      )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
+            <div className="grid grid-cols-4 gap-2 max-h-36 overflow-y-auto">
+              {EXPENSE_CATEGORIES.map(cat => {
+                const Icon = cat.icon;
+                return (
+                  <button key={cat.name} type="button" onClick={() => setForm(f => ({ ...f, category: cat.name }))} className={`p-2 rounded-xl text-center text-xs font-medium transition-all active:scale-95 ${form.category === cat.name ? 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 ring-2 ring-indigo-500' : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'}`}>
+                    <Icon size={16} className="mx-auto mb-0.5" style={{ color: cat.color }} />
+                    <span className="block truncate">{cat.name.split('/')[0].trim()}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+            <input type="text" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="e.g. Lunch at cafeteria" className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-colors" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+            <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-colors" required />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={resetForm} className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-95 transition-all">Cancel</button>
+            <button type="submit" disabled={submitting} className="flex-1 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 active:scale-95 transition-all disabled:opacity-60">{submitting ? 'Saving…' : editingId ? 'Update' : 'Add Expense'}</button>
+          </div>
+          {submitError && <p className="text-sm text-red-600 dark:text-red-400 text-center">{submitError}</p>}
+        </form>
+      </Modal>
 
       <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
         {filtered.length > 0 ? (
@@ -127,7 +125,7 @@ export default function ExpensesPage() {
               const cat = EXPENSE_CATEGORIES.find(c => c.name === e.category);
               const Icon = cat?.icon;
               return (
-                <div key={e.id} className="flex items-center gap-3 p-4 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-all">
+                <div key={e.id} className="flex items-center gap-3 p-4 hover:bg-gray-50/80 dark:hover:bg-white/[0.03] transition-colors">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: (cat?.color || '#78716c') + '15' }}>
                     {Icon ? <Icon size={18} style={{ color: cat?.color }} /> : <span>{'\uD83D\uDCCC'}</span>}
                   </div>

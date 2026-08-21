@@ -138,9 +138,9 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Link href="/expenses" className="flex items-center gap-2 bg-indigo-600 text-white rounded-xl px-4 py-3 text-sm font-medium hover:bg-indigo-700 transition-all shadow-sm shadow-indigo-600/20 active:scale-[0.96]"><Plus size={16} /> Add Expense</Link>
-        <Link href="/money-received" className="flex items-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl px-4 py-3 text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-all active:scale-[0.96]"><Plus size={16} /> Add Money</Link>
-        <Link href="/saved-money" className="flex items-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl px-4 py-3 text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-all active:scale-[0.96]"><Plus size={16} /> Save Money</Link>
-        <Link href="/savings-goals" className="flex items-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl px-4 py-3 text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-all active:scale-[0.96]"><Plus size={16} /> New Goal</Link>
+        <Link href="/money-received" className="flex items-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl px-4 py-3 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700/70 transition-all active:scale-[0.96]"><Plus size={16} /> Add Money</Link>
+        <Link href="/saved-money" className="flex items-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl px-4 py-3 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700/70 transition-all active:scale-[0.96]"><Plus size={16} /> Save Money</Link>
+        <Link href="/savings-goals" className="flex items-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl px-4 py-3 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700/70 transition-all active:scale-[0.96]"><Plus size={16} /> New Goal</Link>
       </div>
 
       {savedMoney > 0 && totalGoalTarget === 0 && (
@@ -239,7 +239,7 @@ export default function DashboardPage() {
                 const cat = EXPENSE_CATEGORIES.find(c => c.name === e.category);
                 const Icon = cat?.icon;
                 return (
-                  <div key={e.id} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-all active:scale-[0.99] cursor-default">
+                  <div key={e.id} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50/80 dark:hover:bg-white/[0.03] transition-colors active:scale-[0.99] cursor-default">
                     <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: (cat?.color || '#78716c') + '15' }}>
                       {Icon ? <Icon size={16} style={{ color: cat?.color }} /> : <span className="text-sm">📌</span>}
                     </div>

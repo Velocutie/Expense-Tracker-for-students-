@@ -11,7 +11,11 @@ import { useState, useEffect } from 'react';
 import { useTheme } from '@/lib/theme';
 import { useAuth } from '@/lib/auth';
 
-/* ─────────────────────────── NAV STRUCTURE ─────────────────────────── */
+/* ─────────────────────── CONSTANTS ─────────────────────── */
+
+const EXPANDED_W = 240;
+const COLLAPSED_W = 72;
+const CARD_MARGIN = 8; // m-2 = 8px each side
 
 const NAV_SECTIONS = [
   {
@@ -53,7 +57,7 @@ const THEME_OPTIONS = [
   { value: 'system' as const, icon: Monitor, label: 'System' },
 ];
 
-/* ─────────────────────────── TOOLTIP ─────────────────────────── */
+/* ─────────────────────── TOOLTIP ─────────────────────── */
 
 function Tooltip({ label }: { label: string }) {
   return (
@@ -71,7 +75,7 @@ function Tooltip({ label }: { label: string }) {
   );
 }
 
-/* ─────────────────────────── NAV ITEM ─────────────────────────── */
+/* ─────────────────────── NAV ITEM ─────────────────────── */
 
 function NavItem({
   href,
@@ -90,30 +94,33 @@ function NavItem({
     <Link
       href={href}
       title={isCollapsed ? label : undefined}
-      aria-label={isCollapsed ? label : undefined}
+      aria-label={label}
       className={`
-        relative flex items-center gap-3 rounded-xl text-sm font-medium
+        relative flex items-center rounded-xl text-sm font-medium
         transition-colors duration-150 group active:scale-[0.97]
-        ${isCollapsed ? 'justify-center p-2.5' : 'px-3 py-2'}
+        ${isCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2'}
         ${isActive
-          ? 'bg-indigo-500/10 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400'
+          ? 'bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-semibold ring-1 ring-indigo-500/20 dark:ring-indigo-400/20'
           : 'text-gray-600 dark:text-gray-400 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] hover:text-gray-900 dark:hover:text-gray-100'
         }
       `}
     >
-      {/* Left accent bar for active item */}
-      {isActive && !isCollapsed && (
-        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-indigo-500 rounded-r-full" />
+      {/* Left accent bar */}
+      {isActive && (
+        <span
+          className={`
+            absolute left-0 top-1/2 -translate-y-1/2 bg-indigo-500 dark:bg-indigo-400 rounded-r-full
+            ${isCollapsed ? 'w-1 h-4' : 'w-0.5 h-5'}
+          `}
+        />
       )}
 
       <Icon
         size={17}
-        className={`shrink-0 transition-colors duration-150 ${
-          isActive ? 'text-indigo-500 dark:text-indigo-400' : ''
-        }`}
+        className={`shrink-0 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : ''}`}
       />
 
-      {/* Label with fade */}
+      {/* Label */}
       <span
         className={`
           whitespace-nowrap overflow-hidden leading-none
@@ -124,15 +131,14 @@ function NavItem({
         {label}
       </span>
 
-      {/* Tooltip when collapsed */}
       {isCollapsed && <Tooltip label={label} />}
     </Link>
   );
 }
 
-/* ─────────────────────────── SIDEBAR INNER CONTENT ─────────────────────────── */
+/* ─────────────────────── SIDEBAR INNER ─────────────────────── */
 
-function SidebarContent({
+function SidebarInner({
   collapsed,
   onCollapse,
   showCollapseButton = true,
@@ -150,77 +156,81 @@ function SidebarContent({
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full">
 
-      {/* ── Header ── */}
+      {/* ── HEADER ────────────────────────────────────────
+          In expanded mode: Logo + App Name on left, Toggle on right.
+          In collapsed mode: Logo on top, Toggle button centered below it.
+          This ensures ZERO horizontal clipping or overlap.
+      ─────────────────────────────────────────────────── */}
       <div
         className={`
-          flex items-center shrink-0 h-[60px] border-b border-black/[0.05] dark:border-white/[0.05]
-          ${collapsed ? 'justify-center px-3' : 'px-4'}
+          shrink-0 border-b border-black/[0.05] dark:border-white/[0.05]
+          transition-all duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]
+          ${collapsed
+            ? 'flex flex-col items-center justify-center py-2.5 px-1 gap-1.5 min-h-[72px]'
+            : 'flex items-center justify-between h-[60px] px-3'
+          }
         `}
       >
-        {/* Logo mark */}
-        <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/30 shrink-0">
-          <span className="text-white font-bold text-sm select-none">E</span>
+        {/* Logo & Brand Slot */}
+        <div className={`flex items-center min-w-0 ${collapsed ? 'justify-center' : 'gap-2.5 flex-1 overflow-hidden'}`}>
+          <div
+            className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-600/30 shrink-0"
+            title={collapsed ? 'ExpenseWise' : undefined}
+          >
+            <span className="text-white font-bold text-sm select-none">E</span>
+          </div>
+
+          {/* App name — slides away when collapsed */}
+          {!collapsed && (
+            <div className="min-w-0 overflow-hidden transition-opacity duration-200">
+              <p className="text-[15px] font-bold text-gray-900 dark:text-white leading-none whitespace-nowrap">
+                ExpenseWise
+              </p>
+              <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 whitespace-nowrap">
+                Student Finance
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* App name — fades out when collapsed */}
-        <div
-          className={`
-            flex-1 min-w-0 ml-2.5 overflow-hidden
-            transition-[max-width,opacity] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]
-            ${collapsed ? 'max-w-0 opacity-0' : 'max-w-[160px] opacity-100'}
-          `}
-        >
-          <p className="text-[15px] font-bold text-gray-900 dark:text-white leading-none whitespace-nowrap">
-            ExpenseWise
-          </p>
-          <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 whitespace-nowrap">
-            Student Finance
-          </p>
-        </div>
-
-        {/* Collapse toggle (only on desktop variant) */}
+        {/* Toggle button */}
         {showCollapseButton && onCollapse && (
           <button
             onClick={onCollapse}
-            className={`
-              shrink-0 w-7 h-7 rounded-lg flex items-center justify-center
+            className="
+              shrink-0 w-7 h-7 rounded-lg
+              flex items-center justify-center
               text-gray-400 dark:text-gray-500
               hover:bg-black/[0.06] dark:hover:bg-white/[0.08]
-              hover:text-gray-600 dark:hover:text-gray-300
+              hover:text-gray-700 dark:hover:text-gray-200
               transition-colors duration-150
-              ${collapsed ? '' : 'ml-1'}
-            `}
+            "
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {collapsed
-              ? <PanelLeftOpen size={15} />
-              : <PanelLeftClose size={15} />
+              ? <PanelLeftOpen size={16} />
+              : <PanelLeftClose size={16} />
             }
           </button>
         )}
       </div>
 
-      {/* ── Navigation sections ── */}
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 space-y-1">
-        {NAV_SECTIONS.map((section) => (
+      {/* ── NAVIGATION ─────────────────────────────────── */}
+      <nav className="flex-1 overflow-y-auto overflow-x-visible py-3 px-2 space-y-1">
+        {NAV_SECTIONS.map((section, idx) => (
           <div key={section.label} className="mb-1">
-            {/* Section label */}
-            <div
-              className={`
-                overflow-hidden
-                transition-[max-height,opacity] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]
-                ${collapsed ? 'max-h-0 opacity-0' : 'max-h-8 opacity-100'}
-              `}
-            >
-              <p className="px-3 pt-1 pb-1.5 text-[10px] font-semibold tracking-widest uppercase text-gray-400 dark:text-gray-600 select-none">
+            {/* Section label or subtle divider */}
+            {collapsed ? (
+              idx > 0 && <div className="my-1.5 border-t border-black/[0.06] dark:border-white/[0.06] mx-1" />
+            ) : (
+              <div className="px-3 pt-1 pb-1.5 text-[10px] font-semibold tracking-widest uppercase text-gray-400 dark:text-gray-500 select-none">
                 {section.label}
-              </p>
-            </div>
+              </div>
+            )}
 
-            {/* Items */}
             <div className="space-y-0.5">
               {section.items.map((item) => (
                 <NavItem
@@ -236,19 +246,15 @@ function SidebarContent({
           </div>
         ))}
 
-        {/* ── Account section ── */}
+        {/* Account section header */}
         <div className="mb-1">
-          <div
-            className={`
-              overflow-hidden
-              transition-[max-height,opacity] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]
-              ${collapsed ? 'max-h-0 opacity-0' : 'max-h-8 opacity-100'}
-            `}
-          >
-            <p className="px-3 pt-3 pb-1.5 text-[10px] font-semibold tracking-widest uppercase text-gray-400 dark:text-gray-600 select-none">
+          {collapsed ? (
+            <div className="my-1.5 border-t border-black/[0.06] dark:border-white/[0.06] mx-1" />
+          ) : (
+            <div className="px-3 pt-3 pb-1.5 text-[10px] font-semibold tracking-widest uppercase text-gray-400 dark:text-gray-500 select-none">
               Account
-            </p>
-          </div>
+            </div>
+          )}
 
           <div className="space-y-0.5">
             <NavItem
@@ -262,11 +268,11 @@ function SidebarContent({
         </div>
       </nav>
 
-      {/* ── Theme toggle (hidden when collapsed) ── */}
+      {/* ── THEME TOGGLE ──────────────────────────────── */}
       <div
         className={`
           px-2 shrink-0 overflow-hidden
-          transition-[max-height,opacity,padding] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]
+          transition-[max-height,opacity,padding-bottom] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]
           ${collapsed ? 'max-h-0 opacity-0 pb-0' : 'max-h-16 opacity-100 pb-2'}
         `}
       >
@@ -296,17 +302,17 @@ function SidebarContent({
         </div>
       </div>
 
-      {/* ── User + Sign Out ── */}
+      {/* ── USER + SIGN OUT ──────────────────────────── */}
       <div className="border-t border-black/[0.05] dark:border-white/[0.05] shrink-0 px-2 py-2 space-y-0.5">
         {/* Profile link */}
         <Link
           href="/profile"
           title={collapsed ? (user?.name || 'Profile') : undefined}
           className={`
-            relative flex items-center gap-3 rounded-xl
+            relative flex items-center rounded-xl
             hover:bg-black/[0.04] dark:hover:bg-white/[0.06]
             transition-colors duration-150 group cursor-pointer
-            ${collapsed ? 'justify-center p-2.5' : 'px-3 py-2'}
+            ${collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2'}
           `}
         >
           <div className="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center shrink-0">
@@ -334,12 +340,12 @@ function SidebarContent({
           onClick={handleSignOut}
           title={collapsed ? 'Sign Out' : undefined}
           className={`
-            relative w-full flex items-center gap-3 rounded-xl
+            relative w-full flex items-center rounded-xl
             text-rose-500 dark:text-rose-500
             hover:bg-rose-500/[0.08] dark:hover:bg-rose-500/[0.12]
             hover:text-rose-600 dark:hover:text-rose-400
             transition-colors duration-150 group
-            ${collapsed ? 'justify-center p-2.5' : 'px-3 py-2'}
+            ${collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2'}
           `}
           aria-label="Sign out"
         >
@@ -360,7 +366,7 @@ function SidebarContent({
   );
 }
 
-/* ─────────────────────────── MAIN EXPORT ─────────────────────────── */
+/* ─────────────────────── MAIN EXPORT ─────────────────────── */
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -383,31 +389,43 @@ export function Sidebar() {
     setMobileOpen(false);
   }, [pathname]);
 
+  const sidebarW = collapsed ? COLLAPSED_W : EXPANDED_W;
+  const cardW = sidebarW - CARD_MARGIN * 2;
+
   return (
     <>
-      {/* ════════════════════════ DESKTOP SIDEBAR ════════════════════════ */}
+      {/* ═══════════════ DESKTOP SIDEBAR ═══════════════
+          The <aside> acts as an in-flow flex spacer.
+          The glass card is absolute inside it so its
+          overflow-hidden / rounded corners don't affect
+          fixed descendants (modals, overlays).
+      ════════════════════════════════════════════════ */}
       <aside
-        className={`
-          hidden md:flex flex-col shrink-0 relative
-          transition-[width] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]
-        `}
-        style={{ width: collapsed ? '64px' : '240px' }}
+        className="hidden md:block shrink-0 relative"
+        style={{
+          width: sidebarW,
+          minWidth: sidebarW,
+          transition: `width 220ms cubic-bezier(0.4,0,0.2,1),
+                       min-width 220ms cubic-bezier(0.4,0,0.2,1)`,
+        }}
       >
-        {/* Glass card wrapper — sits inset from the viewport edge */}
+        {/* Glass card — absolutely positioned to match aside width */}
         <div
-          className={`
-            flex flex-col
-            m-2 rounded-2xl overflow-hidden
+          className="
+            flex flex-col absolute top-2 bottom-2 left-2
+            rounded-2xl
             bg-white/80 dark:bg-[#141C2D]/75
             backdrop-blur-xl
-            border border-black/[0.07] dark:border-white/[0.07]
-            shadow-[0_2px_16px_0_rgba(0,0,0,0.06)] dark:shadow-[0_2px_16px_0_rgba(0,0,0,0.35)]
-            transition-[width] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]
-            absolute inset-y-0
-          `}
-          style={{ width: collapsed ? 'calc(64px - 16px)' : 'calc(240px - 16px)' }}
+            border border-black/[0.07] dark:border-white/[0.08]
+            shadow-[0_2px_16px_0_rgba(0,0,0,0.06)]
+            dark:shadow-[0_2px_16px_0_rgba(0,0,0,0.35)]
+          "
+          style={{
+            width: cardW,
+            transition: `width 220ms cubic-bezier(0.4,0,0.2,1)`,
+          }}
         >
-          <SidebarContent
+          <SidebarInner
             collapsed={collapsed}
             onCollapse={() => setCollapsed((c) => !c)}
             showCollapseButton
@@ -415,7 +433,7 @@ export function Sidebar() {
         </div>
       </aside>
 
-      {/* ════════════════════════ MOBILE HAMBURGER ════════════════════════ */}
+      {/* ═══════════════ MOBILE HAMBURGER ═══════════════ */}
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
         className="
@@ -426,7 +444,6 @@ export function Sidebar() {
           shadow-md border border-black/[0.07] dark:border-white/[0.07]
           flex items-center justify-center
           active:scale-95 transition-all duration-150
-          hover:bg-white dark:hover:bg-[#1a2438]
         "
         aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
       >
@@ -436,7 +453,7 @@ export function Sidebar() {
         }
       </button>
 
-      {/* ════════════════════════ MOBILE OVERLAY ════════════════════════ */}
+      {/* ═══════════════ MOBILE OVERLAY ═══════════════ */}
       <div
         className={`
           md:hidden fixed inset-0 z-30
@@ -447,7 +464,7 @@ export function Sidebar() {
         onClick={() => setMobileOpen(false)}
       />
 
-      {/* ════════════════════════ MOBILE DRAWER ════════════════════════ */}
+      {/* ═══════════════ MOBILE DRAWER ═══════════════ */}
       <aside
         className={`
           md:hidden fixed inset-y-0 left-0 z-40 w-64
@@ -455,29 +472,32 @@ export function Sidebar() {
           p-2
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
+        aria-hidden={!mobileOpen}
       >
         <div
           className="
-            flex flex-col h-full rounded-2xl overflow-hidden
-            bg-white/90 dark:bg-[#141C2D]/90
+            flex flex-col h-full rounded-2xl
+            bg-white/95 dark:bg-[#141C2D]/95
             backdrop-blur-xl
-            border border-black/[0.07] dark:border-white/[0.07]
-            shadow-[0_4px_32px_0_rgba(0,0,0,0.12)] dark:shadow-[0_4px_32px_0_rgba(0,0,0,0.5)]
+            border border-black/[0.07] dark:border-white/[0.08]
+            shadow-[0_4px_32px_0_rgba(0,0,0,0.12)]
+            dark:shadow-[0_4px_32px_0_rgba(0,0,0,0.5)]
           "
         >
-          <SidebarContent collapsed={false} showCollapseButton={false} />
+          <SidebarInner collapsed={false} showCollapseButton={false} />
         </div>
       </aside>
 
-      {/* ════════════════════════ MOBILE BOTTOM NAV ════════════════════════ */}
+      {/* ═══════════════ MOBILE BOTTOM NAV ═══════════════ */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 safe-bottom">
         <div
           className="
             mx-2 mb-2 flex items-center justify-around px-2 py-2
             bg-white/90 dark:bg-[#141C2D]/90
             backdrop-blur-xl
-            border border-black/[0.07] dark:border-white/[0.07]
-            rounded-2xl shadow-lg dark:shadow-[0_4px_24px_0_rgba(0,0,0,0.4)]
+            border border-black/[0.07] dark:border-white/[0.08]
+            rounded-2xl
+            shadow-lg dark:shadow-[0_4px_24px_0_rgba(0,0,0,0.4)]
           "
         >
           {BOTTOM_NAV_ITEMS.map((item) => {

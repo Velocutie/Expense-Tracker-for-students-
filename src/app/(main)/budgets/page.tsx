@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import { EXPENSE_CATEGORIES } from '@/lib/store';
-import { Plus, Trash2, X, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, AlertTriangle } from 'lucide-react';
 import { Tip } from '@/components/Tip';
+import { Modal } from '@/components/Modal';
 
 function getMonthKey(d: string) { return d.slice(0, 7); }
 
@@ -67,7 +68,7 @@ export default function BudgetsPage() {
           const [y, mo] = m.split('-');
           const label = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(mo)-1] + ' ' + y;
           return (
-            <button key={m} onClick={() => setMonth(m)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all active:scale-95 ${month === m ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>{label}</button>
+            <button key={m} onClick={() => setMonth(m)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all active:scale-95 ${month === m ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/70'}`}>{label}</button>
           );
         })}
       </div>
@@ -92,40 +93,32 @@ export default function BudgetsPage() {
         </div>
       )}
 
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl border border-gray-100 dark:border-gray-700 animate-modal-in">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Set Budget</h2>
-              <button onClick={resetForm} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg active:scale-90 transition-all"><X size={18} /></button>
-            </div>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
-                <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-colors">
-                  {EXPENSE_CATEGORIES.map(cat => <option key={cat.name} value={cat.name}>{cat.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Budget Limit</label>
-                <input type="number" step="0.01" min="1" value={form.limit} onChange={e => setForm(f => ({ ...f, limit: e.target.value }))} placeholder="e.g. 5000" className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-lg transition-colors" required />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Period</label>
-                <div className="flex rounded-xl overflow-hidden border border-gray-200 dark:border-gray-600">
-                  <button type="button" onClick={() => setForm(f => ({ ...f, period: 'monthly' }))} className={`flex-1 py-2.5 text-sm font-medium transition-all active:scale-95 ${form.period === 'monthly' ? 'bg-indigo-500 text-white' : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'}`}>Monthly</button>
-                  <button type="button" onClick={() => setForm(f => ({ ...f, period: 'weekly' }))} className={`flex-1 py-2.5 text-sm font-medium transition-all active:scale-95 ${form.period === 'weekly' ? 'bg-indigo-500 text-white' : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'}`}>Weekly</button>
-                </div>
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={resetForm} className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-95 transition-all">Cancel</button>
-                <button type="submit" disabled={submitting} className="flex-1 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 active:scale-95 transition-all disabled:opacity-60">{submitting ? 'Saving…' : 'Set Budget'}</button>
-              </div>
-              {submitError && <p className="text-sm text-red-600 dark:text-red-400 text-center">{submitError}</p>}
-            </form>
+      <Modal open={showForm} onClose={resetForm} title="Set Budget" titleId="budget-modal-title">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
+            <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-colors">
+              {EXPENSE_CATEGORIES.map(cat => <option key={cat.name} value={cat.name}>{cat.name}</option>)}
+            </select>
           </div>
-        </div>
-      )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Budget Limit</label>
+            <input type="number" step="0.01" min="1" value={form.limit} onChange={e => setForm(f => ({ ...f, limit: e.target.value }))} placeholder="e.g. 5000" className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-lg transition-colors" required />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Period</label>
+            <div className="flex rounded-xl overflow-hidden border border-gray-200 dark:border-gray-600">
+              <button type="button" onClick={() => setForm(f => ({ ...f, period: 'monthly' }))} className={`flex-1 py-2.5 text-sm font-medium transition-all active:scale-95 ${form.period === 'monthly' ? 'bg-indigo-500 text-white' : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'}`}>Monthly</button>
+              <button type="button" onClick={() => setForm(f => ({ ...f, period: 'weekly' }))} className={`flex-1 py-2.5 text-sm font-medium transition-all active:scale-95 ${form.period === 'weekly' ? 'bg-indigo-500 text-white' : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'}`}>Weekly</button>
+            </div>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={resetForm} className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-95 transition-all">Cancel</button>
+            <button type="submit" disabled={submitting} className="flex-1 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 active:scale-95 transition-all disabled:opacity-60">{submitting ? 'Saving…' : 'Set Budget'}</button>
+          </div>
+          {submitError && <p className="text-sm text-red-600 dark:text-red-400 text-center">{submitError}</p>}
+        </form>
+      </Modal>
 
       {budgets.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
