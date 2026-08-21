@@ -63,16 +63,14 @@ export function Sidebar() {
   const navContent = (isCollapsed: boolean) => (
     <>
       {/* Header */}
-      <div className={`flex items-center border-b border-gray-100 dark:border-gray-700/60 shrink-0 ${isCollapsed ? 'justify-center p-4 h-16' : 'gap-3 p-5 h-16'}`}>
-        <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/25 shrink-0">
+      <div className={`flex items-center border-b border-gray-100 dark:border-gray-700/60 shrink-0 ${isCollapsed ? 'justify-center h-16' : 'px-5 h-16'}`}>
+        <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/25 shrink-0 transition-all duration-200">
           <span className="text-white font-bold text-base">E</span>
         </div>
-        {!isCollapsed && (
-          <div className="flex-1 min-w-0">
-            <h1 className="text-base font-bold text-gray-900 dark:text-white leading-tight">ExpenseWise</h1>
-            <p className="text-[11px] text-gray-500 dark:text-gray-400">Student Finance</p>
-          </div>
-        )}
+        <div className={`flex-1 min-w-0 flex flex-col whitespace-nowrap overflow-hidden transition-all duration-200 ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[200px] opacity-100 ml-3'}`}>
+          <h1 className="text-base font-bold text-gray-900 dark:text-white leading-tight">ExpenseWise</h1>
+          <p className="text-[11px] text-gray-500 dark:text-gray-400">Student Finance</p>
+        </div>
       </div>
 
       {/* Navigation */}
@@ -99,7 +97,9 @@ export function Sidebar() {
                 <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-indigo-500 rounded-r-full" />
               )}
               <Icon size={18} className="shrink-0" />
-              {!isCollapsed && <span>{item.label}</span>}
+              <span className={`whitespace-nowrap transition-all duration-200 overflow-hidden ${isCollapsed ? 'max-w-0 opacity-0' : 'max-w-[180px] opacity-100 ml-1'}`}>
+                {item.label}
+              </span>
               {/* Tooltip for collapsed mode */}
               {isCollapsed && (
                 <span className="absolute left-full ml-2 px-2 py-1 text-xs font-medium bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none whitespace-nowrap z-50 shadow-lg">
@@ -112,30 +112,29 @@ export function Sidebar() {
       </nav>
 
       {/* Theme Toggle */}
-      {!isCollapsed && (
-        <div className="px-3 pb-2 shrink-0">
-          <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-gray-700/60 rounded-xl">
-            {THEME_OPTIONS.map(opt => {
-              const Icon = opt.icon;
-              return (
-                <button
-                  key={opt.value}
-                  onClick={() => setTheme(opt.value)}
-                  className={`flex-1 flex items-center justify-center px-2 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 ${
-                    theme === opt.value
-                      ? 'bg-white dark:bg-slate-600 text-gray-900 dark:text-white shadow-sm'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                  }`}
-                  title={opt.label}
-                  aria-label={`Switch to ${opt.label} theme`}
-                >
-                  <Icon size={13} />
-                </button>
-              );
-            })}
-          </div>
+      <div className={`px-3 pb-2 shrink-0 transition-all duration-200 overflow-hidden ${isCollapsed ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-16 opacity-100'}`}>
+        <div className="flex items-center gap-1 p-1 bg-gray-100 border border-gray-200 dark:bg-gray-800 dark:border-gray-700 rounded-xl relative">
+          {THEME_OPTIONS.map(opt => {
+            const Icon = opt.icon;
+            const isActive = theme === opt.value;
+            return (
+              <button
+                key={opt.value}
+                onClick={() => setTheme(opt.value)}
+                className={`flex-1 flex items-center justify-center px-2 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 z-10 ${
+                  isActive
+                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-gray-700/50'
+                }`}
+                title={opt.label}
+                aria-label={`Switch to ${opt.label} theme`}
+              >
+                <Icon size={13} className={isActive ? 'scale-110' : 'scale-100'} />
+              </button>
+            );
+          })}
         </div>
-      )}
+      </div>
 
       {/* User Profile */}
       <div className={`border-t border-gray-100 dark:border-gray-700/60 shrink-0 ${isCollapsed ? 'p-3' : 'p-3'}`}>
@@ -150,12 +149,10 @@ export function Sidebar() {
           <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-500/15 flex items-center justify-center shrink-0">
             <User size={15} className="text-indigo-600 dark:text-indigo-400" />
           </div>
-          {!isCollapsed && (
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">{user?.name || 'User'}</p>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">{user?.email || 'Not signed in'}</p>
-            </div>
-          )}
+          <div className={`flex-1 min-w-0 flex flex-col whitespace-nowrap overflow-hidden transition-all duration-200 ${isCollapsed ? 'max-w-0 opacity-0' : 'max-w-[150px] opacity-100'}`}>
+            <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">{user?.name || 'User'}</p>
+            <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">{user?.email || 'Not signed in'}</p>
+          </div>
           {isCollapsed && (
             <span className="absolute left-full ml-2 px-2 py-1 text-xs font-medium bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none whitespace-nowrap z-50 shadow-lg">
               {user?.name || 'Profile'}

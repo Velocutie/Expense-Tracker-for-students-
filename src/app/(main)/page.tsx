@@ -4,9 +4,10 @@ import { useState } from 'react';
 import { useStore } from '@/lib/store';
 import { EXPENSE_CATEGORIES } from '@/lib/store';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { ArrowDownLeft, ArrowUpRight, PiggyBank, TrendingDown, TrendingUp, Plus, Wallet, Calendar } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, PiggyBank, TrendingDown, TrendingUp, Plus, Wallet, Calendar, Activity, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { Tip } from '@/components/Tip';
+import { useAuth } from '@/lib/auth';
 
 function getMonthKey(date: Date) { return date.toISOString().slice(0, 7); }
 function getMonthLabel(mk: string) {
@@ -37,6 +38,7 @@ const COLORS = ['#3b82f6','#ef4444','#22c55e','#f97316','#8b5cf6','#ec4899'];
 
 export default function DashboardPage() {
   const store = useStore();
+  const { user } = useAuth();
   const { expenses, budgets, savingsGoals, settings, getTotalReceived, getTotalExpenses, getCurrentSavedMoney, getSpentByCategory } = store;
   const [month, setMonth] = useState(getMonthKey(new Date()));
 
@@ -62,14 +64,22 @@ export default function DashboardPage() {
   const totalGoalProgress = savingsGoals.reduce((s, g) => s + g.current, 0);
   const totalGoalTarget = savingsGoals.reduce((s, g) => s + g.target, 0);
 
+  const pastDays = month === getMonthKey(new Date()) ? new Date().getDate() : new Date(parseInt(month.split('-')[0]), parseInt(month.split('-')[1]), 0).getDate();
+  const averageDaily = pastDays > 0 ? totalExpenses / pastDays : 0;
+  
+  const budgetsThisMonth = budgets.length;
+  const exceededBudgets = budgets.filter(b => (b.category === 'All' ? totalExpenses : getSpentByCategory(month)[b.category] || 0) > b.limit).length;
+
   const greeting = new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening';
+  const displayName = user?.name || user?.email?.split('@')[0] || 'there';
+  const displayGreeting = `Good ${greeting}, ${displayName} 👋`;
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Good {greeting} 👋</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Here&apos;s how your money is doing.</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white capitalize-first">{displayGreeting}</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Here&apos;s how your money is doing this month.</p>
         </div>
         <div className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-2">
           <button onClick={() => setMonth(prevMonth(month))} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg active:scale-90 transition-all" aria-label="Previous month">&lsaquo;</button>
@@ -189,6 +199,22 @@ export default function DashboardPage() {
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Biggest spend</p>
                 <p className="text-sm font-semibold dark:text-gray-200">{topCategory.name} &bull; {'\u20B9'}{topCategory.value.toLocaleString('en-IN')}</p>
+              </div>
+            </div>
+          )}
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-3 hover:shadow-md transition-all">
+            <Activity size={18} className="text-indigo-500 shrink-0" />
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Average daily spend</p>
+              <p className="text-sm font-semibold dark:text-gray-200">{'\u20B9'}{Math.round(averageDaily).toLocaleString('en-IN')}</p>
+            </div>
+          </div>
+          {budgetsThisMonth > 0 && (
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-3 hover:shadow-md transition-all">
+              <AlertCircle size={18} className={exceededBudgets > 0 ? "text-red-500 shrink-0" : "text-green-500 shrink-0"} />
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Budget health</p>
+                <p className="text-sm font-semibold dark:text-gray-200">{exceededBudgets === 0 ? 'All budgets healthy' : `${exceededBudgets} exceeded`}</p>
               </div>
             </div>
           )}
