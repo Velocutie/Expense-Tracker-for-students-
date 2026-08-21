@@ -98,7 +98,7 @@ export default function SavedMoneyPage() {
         {sorted.length > 0 ? (
           <div className="divide-y divide-gray-50 dark:divide-gray-700">
             {sorted.map(e => (
-              <div key={e.id} className="flex items-center gap-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-750 transition-all">
+              <div key={e.id} className="flex items-center gap-3 p-4 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-all">
                 <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${e.type === 'add' ? 'bg-green-50 dark:bg-green-500/10' : 'bg-red-50 dark:bg-red-500/10'}`}>
                   {e.type === 'add' ? <Plus size={16} className="text-green-600 dark:text-green-400" /> : <Minus size={16} className="text-red-600 dark:text-red-400" />}
                 </div>

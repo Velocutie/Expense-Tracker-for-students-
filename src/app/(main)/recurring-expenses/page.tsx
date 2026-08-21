@@ -119,7 +119,7 @@ export default function RecurringExpensesPage() {
               const cat = EXPENSE_CATEGORIES.find(c => c.name === r.category);
               const Icon = cat?.icon;
               return (
-                <div key={r.id} className="flex items-center gap-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-750 transition-all">
+                <div key={r.id} className="flex items-center gap-3 p-4 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-all">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: (cat?.color || '#78716c') + '15' }}>
                     {Icon ? <Icon size={18} style={{ color: cat?.color }} /> : <Repeat size={18} className="text-gray-400" />}
                   </div>

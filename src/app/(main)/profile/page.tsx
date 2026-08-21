@@ -362,7 +362,7 @@ export default function ProfilePage() {
             </div>
           )}
 
-          <button onClick={handleSignOut} className="w-full flex items-center gap-3 px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-750 transition-all text-left active:scale-[0.99]">
+          <button onClick={handleSignOut} className="w-full flex items-center gap-3 px-6 py-4 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-all text-left active:scale-[0.99]">
             <LogOut size={18} className="text-gray-400" />
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-900 dark:text-white">Sign Out</p>
@@ -374,7 +374,7 @@ export default function ProfilePage() {
 
       {/* Version */}
       <div className="text-center py-4">
-        <p className="text-xs text-gray-400 dark:text-gray-500">ExpenseWise v1.0</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500">ExpenseWise v1.0.1</p>
         <p className="text-xs text-gray-300 dark:text-gray-600 mt-1">Made for college students 💜</p>
       </div>
     </div>

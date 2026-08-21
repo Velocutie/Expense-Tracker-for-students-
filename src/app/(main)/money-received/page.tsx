@@ -115,7 +115,7 @@ export default function MoneyReceivedPage() {
               const src = MONEY_SOURCES.find(s => s.name === m.source);
               const Icon = src?.icon;
               return (
-                <div key={m.id} className="flex items-center gap-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-750 transition-all">
+                <div key={m.id} className="flex items-center gap-3 p-4 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-all">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: (src?.color || '#78716c') + '15' }}>
                     {Icon ? <Icon size={18} style={{ color: src?.color }} /> : <span>{'\uD83D\uDCB0'}</span>}
                   </div>

@@ -7,11 +7,19 @@
   --foreground: #111827;
   --safe-area-top: env(safe-area-inset-top, 0px);
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  /* Card surfaces */
+  --card-bg: #ffffff;
+  --card-hover: #f9fafb;
+  --card-border: #f3f4f6;
 }
 
 .dark {
   --background: #030712;
   --foreground: #f3f4f6;
+  /* Dark mode card hierarchy */
+  --card-bg: rgba(30, 41, 59, 0.8);       /* slate-800/80 */
+  --card-hover: rgba(51, 65, 85, 0.5);    /* slate-700/50 */
+  --card-border: rgba(51, 65, 85, 0.6);   /* slate-700/60 */
 }
 
 html {
@@ -85,6 +93,29 @@ body.no-pull-refresh {
     transition: all 0.2s ease;
   }
 }
+
+/* Page entrance animation */
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-transition {
+  animation: page-in 0.2s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-transition {
+    animation: none;
+  }
+}
+
 
 /* Disable transitions for reduced motion preference */
 @media (prefers-reduced-motion: reduce) {

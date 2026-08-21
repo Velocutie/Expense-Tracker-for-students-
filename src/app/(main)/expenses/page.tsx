@@ -127,7 +127,7 @@ export default function ExpensesPage() {
               const cat = EXPENSE_CATEGORIES.find(c => c.name === e.category);
               const Icon = cat?.icon;
               return (
-                <div key={e.id} className="flex items-center gap-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-750 transition-all">
+                <div key={e.id} className="flex items-center gap-3 p-4 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-all">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: (cat?.color || '#78716c') + '15' }}>
                     {Icon ? <Icon size={18} style={{ color: cat?.color }} /> : <span>{'\uD83D\uDCCC'}</span>}
                   </div>
