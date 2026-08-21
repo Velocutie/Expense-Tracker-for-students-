@@ -6,6 +6,7 @@ type CashFlowForecastProps = {
   recurringBills: number;
   historicalSpending: number;
   projectedBalance: number;
+  monthlyAllowance: number;
   monthLabel: string;
 };
 
@@ -17,12 +18,15 @@ export function CashFlowForecast({
   recurringBills,
   historicalSpending,
   projectedBalance,
+  monthlyAllowance,
   monthLabel,
 }: CashFlowForecastProps) {
   const isPositive = projectedBalance >= 0;
   const totalInflow = currentIncome + recurringIncome;
   const totalOutflow = recurringBills + historicalSpending;
   const outflowRatio = totalInflow > 0 ? Math.min((totalOutflow / totalInflow) * 100, 100) : 0;
+  const allowanceRatio = monthlyAllowance > 0 ? Math.min((totalOutflow / monthlyAllowance) * 100, 100) : 0;
+  const isWithinAllowance = monthlyAllowance <= 0 || totalOutflow <= monthlyAllowance;
 
   return (
     <section className="cash-flow-forecast relative overflow-hidden rounded-[1.6rem] border border-purple-200/55 dark:border-purple-300/15 bg-white/62 dark:bg-purple-950/25 p-5 shadow-[0_20px_50px_-32px_rgba(76,29,149,0.55)] backdrop-blur-md" aria-labelledby="cash-flow-title">
@@ -66,9 +70,14 @@ export function CashFlowForecast({
         <div className="h-2.5 overflow-hidden rounded-full bg-purple-100/80 dark:bg-purple-900/55">
           <div className={`h-full rounded-full bg-gradient-to-r ${outflowRatio > 85 ? 'from-amber-400 to-rose-500' : 'from-purple-400 via-fuchsia-500 to-indigo-500'} transition-[width] duration-500`} style={{ width: `${outflowRatio}%` }} />
         </div>
-        <div className="mt-3 flex items-start gap-2 rounded-xl bg-purple-100/50 px-3 py-2.5 text-[11px] leading-relaxed text-purple-950/70 dark:bg-purple-900/30 dark:text-purple-50/70">
-          <Sparkles size={13} className="mt-0.5 shrink-0 text-purple-600 dark:text-purple-300" />
-          <span>Forecasts are estimates built from upcoming recurring bills, recurring-income history, and recent spending patterns—not a guarantee of future cash.</span>
+        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto] sm:items-center">
+          <div className="flex items-start gap-2 rounded-xl bg-purple-100/50 px-3 py-2.5 text-[11px] leading-relaxed text-purple-950/70 dark:bg-purple-900/30 dark:text-purple-50/70">
+            <Sparkles size={13} className="mt-0.5 shrink-0 text-purple-600 dark:text-purple-300" />
+            <span>Forecasts use upcoming recurring bills, recurring-income history, and recent spending patterns—not a guarantee of future cash.</span>
+          </div>
+          <div className={`rounded-xl px-3 py-2.5 text-[11px] font-semibold ${isWithinAllowance ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-500/[0.08] dark:text-emerald-200' : 'bg-amber-50 text-amber-800 dark:bg-amber-500/[0.08] dark:text-amber-200'}`}>
+            Allowance guardrail: ₹{Math.round(monthlyAllowance).toLocaleString('en-IN')} · {Math.round(allowanceRatio)}% committed
+          </div>
         </div>
       </div>
     </section>

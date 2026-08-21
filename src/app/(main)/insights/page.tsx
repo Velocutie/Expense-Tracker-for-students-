@@ -36,7 +36,7 @@ const COLORS = ['#3b82f6','#ef4444','#22c55e','#f97316','#8b5cf6','#ec4899'];
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function InsightsPage() {
-  const { expenses, moneyReceived, savedMoneyEntries, recurringExpenses, getCurrentSavedMoney, getSpentByCategory, getTotalReceived, getTotalExpenses } = useStore();
+  const { expenses, moneyReceived, savedMoneyEntries, recurringExpenses, settings, getCurrentSavedMoney, getSpentByCategory, getTotalReceived, getTotalExpenses } = useStore();
   
   const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [month, setMonth] = useState(getMonthKey(todayStr));
@@ -157,7 +157,7 @@ export default function InsightsPage() {
   const selectedDateFormatted = selectedDate && selectedDate.length === 10 ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : null;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="insights-layout max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
@@ -218,6 +218,7 @@ export default function InsightsPage() {
         recurringBills={recurringBills}
         historicalSpending={historicalSpending + projectedRemainingSpending}
         projectedBalance={projectedBalance}
+        monthlyAllowance={settings.monthlyAllowance}
         monthLabel={getFullMonthLabel(month)}
       />
 

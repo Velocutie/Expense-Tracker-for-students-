@@ -396,3 +396,20 @@ body {
 }
 
 .dark .tip-card__glow { background: radial-gradient(circle, rgba(168, 85, 247, 0.28), transparent 68%); }
+
+
+/* Insights hierarchy: calendar first, then reference rate and forecast. */
+.insights-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.insights-layout > :nth-child(1) { order: 0; }
+.insights-layout > :nth-child(2) { order: 1; }
+.insights-layout > :nth-child(3) { order: 2; }
+.insights-layout > :nth-child(4) { order: 5; }
+.insights-layout > :nth-child(5) { order: 6; }
+.insights-layout > :nth-child(6) { order: 3; }
+.insights-layout > :nth-child(7) { order: 4; }
+.insights-layout > :nth-child(8) { order: 7; }
