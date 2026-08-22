@@ -499,3 +499,35 @@ body {
     animation: none;
   }
 }
+
+
+/* Authentication DotGrid background: decorative, pointer-safe, and responsive. */
+.auth-dot-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.78;
+  mix-blend-mode: screen;
+  background:
+    radial-gradient(circle at 24% 18%, rgba(168, 85, 247, 0.22), transparent 34%),
+    radial-gradient(circle at 84% 76%, rgba(96, 165, 250, 0.16), transparent 32%);
+}
+
+.auth-shell > .auth-dot-grid + * {
+  position: relative;
+}
+
+@media (max-width: 640px) {
+  .auth-dot-grid {
+    opacity: 0.6;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-dot-grid {
+    opacity: 0.42;
+  }
+}
