@@ -413,3 +413,84 @@ body {
 .insights-layout > :nth-child(6) { order: 3; }
 .insights-layout > :nth-child(7) { order: 4; }
 .insights-layout > :nth-child(8) { order: 7; }
+
+
+/* Auth-only ColorBends-inspired ribbons: GPU-light CSS instead of a WebGL dependency. */
+.auth-color-bends {
+  position: absolute;
+  inset: -18%;
+  overflow: hidden;
+  opacity: 0.82;
+  filter: saturate(1.08);
+  transform: translate3d(0, 0, 0) rotate(-7deg) scale(1.08);
+  animation: auth-color-bends-drift 22s ease-in-out infinite alternate;
+  mix-blend-mode: screen;
+}
+
+.auth-color-bends__ribbon {
+  position: absolute;
+  width: 112%;
+  height: 52%;
+  border-radius: 48% 52% 45% 55%;
+  border: clamp(22px, 4vw, 58px) solid transparent;
+  filter: blur(8px);
+  opacity: 0.72;
+  transform: rotate(-12deg) skewX(-9deg);
+  box-shadow: 0 0 80px 12px currentColor;
+}
+
+.auth-color-bends__ribbon--violet {
+  top: 3%;
+  left: -10%;
+  color: rgba(168, 85, 247, 0.56);
+  border-color: rgba(167, 139, 250, 0.68);
+  background: radial-gradient(ellipse at 50% 50%, rgba(124, 58, 237, 0.38), transparent 68%);
+  animation: auth-ribbon-violet 17s ease-in-out infinite alternate;
+}
+
+.auth-color-bends__ribbon--fuchsia {
+  top: 26%;
+  left: 7%;
+  color: rgba(217, 70, 239, 0.42);
+  border-color: rgba(232, 121, 249, 0.58);
+  background: radial-gradient(ellipse at 45% 54%, rgba(236, 72, 153, 0.34), transparent 70%);
+  transform: rotate(12deg) skewX(13deg) scale(0.82);
+  animation: auth-ribbon-fuchsia 19s ease-in-out infinite alternate;
+}
+
+.auth-color-bends__ribbon--blue {
+  top: 48%;
+  left: -15%;
+  color: rgba(96, 165, 250, 0.32);
+  border-color: rgba(129, 140, 248, 0.42);
+  background: radial-gradient(ellipse at 54% 46%, rgba(59, 130, 246, 0.24), transparent 70%);
+  transform: rotate(-5deg) skewX(-12deg) scale(0.9);
+  animation: auth-ribbon-blue 23s ease-in-out infinite alternate;
+}
+
+@keyframes auth-color-bends-drift {
+  from { transform: translate3d(-1%, 1%, 0) rotate(-7deg) scale(1.08); }
+  to { transform: translate3d(2%, -2%, 0) rotate(-4deg) scale(1.12); }
+}
+
+@keyframes auth-ribbon-violet {
+  from { transform: rotate(-12deg) skewX(-9deg) translate3d(-2%, 1%, 0); }
+  to { transform: rotate(-8deg) skewX(-5deg) translate3d(4%, -3%, 0); }
+}
+
+@keyframes auth-ribbon-fuchsia {
+  from { transform: rotate(12deg) skewX(13deg) scale(0.82) translate3d(3%, -2%, 0); }
+  to { transform: rotate(7deg) skewX(8deg) scale(0.88) translate3d(-3%, 4%, 0); }
+}
+
+@keyframes auth-ribbon-blue {
+  from { transform: rotate(-5deg) skewX(-12deg) scale(0.9) translate3d(-2%, 2%, 0); }
+  to { transform: rotate(-10deg) skewX(-8deg) scale(0.96) translate3d(5%, -2%, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-color-bends,
+  .auth-color-bends__ribbon {
+    animation: none;
+  }
+}
