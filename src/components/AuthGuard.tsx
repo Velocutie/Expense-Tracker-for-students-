@@ -56,5 +56,5 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     return null;
   }
 
-  return <div className={isAuthTransitioning ? 'auth-transition-stage' : undefined}>{children}</div>;
+  return <>{children}</>;
 }

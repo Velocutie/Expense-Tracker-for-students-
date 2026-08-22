@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { AuthDotGrid } from '@/components/AuthDotGrid';
+import { AuthExitLayer } from '@/components/AuthTransitionLayer';
 import { ExpenseWiseBrand } from '@/components/ExpenseWiseBrand';
 import { Eye, EyeOff, Mail, Lock, ArrowRight, Sparkles, TrendingUp, Wallet } from 'lucide-react';
 
@@ -38,8 +39,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className={`auth-shell relative flex min-h-screen overflow-hidden${isLeaving ? ' auth-is-leaving' : ''}`}>
+    <div className="auth-shell relative flex min-h-screen overflow-hidden">
       <AuthDotGrid />
+      <AuthExitLayer active={isLeaving} />
 
       {/* Left Side - Branding (Desktop) */}
       <div className="hidden lg:flex lg:w-1/2 relative z-10 items-center justify-center p-12 xl:p-16">

@@ -4,12 +4,14 @@ import { StoreProvider } from "@/lib/store";
 import { AuthGuard } from "@/components/AuthGuard";
 import { Sidebar } from "@/components/Sidebar";
 import { AmbientBackground } from "@/components/AmbientBackground";
+import { AuthArrivalLayer } from "@/components/AuthTransitionLayer";
 import { usePathname } from "next/navigation";
 
 function InnerLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   return (
     <div className="relative isolate flex min-h-full h-full overflow-hidden">
+      <AuthArrivalLayer />
       <AmbientBackground />
       <div className="main-shell relative z-10 flex min-h-full w-full">
         <Sidebar />
