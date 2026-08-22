@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Banknote, CreditCard, Landmark, WalletCards } from 'lucide-react';
 import type { PaymentMethod } from '@/lib/store';
 
@@ -15,7 +16,7 @@ type AccountBalanceCardProps = {
   monthLabel?: string;
 };
 
-export function AccountBalanceCard({ balances, monthLabel }: AccountBalanceCardProps) {
+export const AccountBalanceCard = memo(function AccountBalanceCard({ balances, monthLabel }: AccountBalanceCardProps) {
   const total = Object.values(balances).reduce((sum, value) => sum + value, 0);
   return (
     <section className="account-balance-card relative overflow-hidden rounded-2xl border border-purple-200/55 dark:border-purple-300/15 bg-white/62 dark:bg-purple-950/25 p-5 shadow-[0_18px_42px_-28px_rgba(76,29,149,0.48)] backdrop-blur-md" aria-labelledby="account-balances-title">
@@ -47,4 +48,4 @@ export function AccountBalanceCard({ balances, monthLabel }: AccountBalanceCardP
       <p className="relative mt-3 text-[10px] leading-relaxed text-purple-800/55 dark:text-purple-100/50">Income adds to its selected account and expenses subtract from the same account. Cards are tracked as a payment method only—no due tracking.</p>
     </section>
   );
-}
+});

@@ -85,7 +85,7 @@ export function Modal({
      * NO backdrop-filter here — that's what caused the "black page" bug.
      */
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-4 bg-purple-950/42 dark:bg-black/68 backdrop-blur-[6px] transition-[background-color,backdrop-filter] duration-200"
+      className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-4 bg-purple-950/42 dark:bg-black/68 backdrop-blur-[4px] transition-[background-color,backdrop-filter] duration-200 will-change-[background-color]"
       aria-hidden="false"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -107,7 +107,7 @@ export function Modal({
           border border-white/65 dark:border-purple-200/15
           rounded-[1.5rem] shadow-[0_30px_80px_-28px_rgba(45,16,80,0.68)]
           max-h-[min(90vh,760px)] overflow-y-auto overscroll-contain
-          animate-modal-in
+          animate-modal-in will-change-[transform,opacity] transform-gpu
           ${panelClassName}
         `}
         onClick={(e) => e.stopPropagation()}

@@ -103,6 +103,7 @@ body.no-pull-refresh { overscroll-behavior-y: contain; }
   overflow: hidden;
   pointer-events: none;
   isolation: isolate;
+  contain: strict;
   background:
     radial-gradient(circle at 12% 18%, rgba(168, 85, 247, 0.12), transparent 28%),
     radial-gradient(circle at 88% 10%, rgba(236, 72, 153, 0.08), transparent 24%),
@@ -121,6 +122,7 @@ body.no-pull-refresh { overscroll-behavior-y: contain; }
 
 .ambient-grid {
   position: absolute;
+  will-change: transform;
   inset: -20%;
   opacity: 0.30;
   transform: perspective(700px) rotateX(62deg) translateY(17%);
@@ -142,6 +144,7 @@ body.no-pull-refresh { overscroll-behavior-y: contain; }
 
 .ambient-orb {
   position: absolute;
+  will-change: transform;
   border-radius: 999px;
   filter: blur(2px);
   opacity: 0.54;
@@ -190,6 +193,7 @@ body.no-pull-refresh { overscroll-behavior-y: contain; }
 
 .ambient-shine {
   position: absolute;
+  will-change: transform, opacity;
   inset: 0;
   opacity: 0.48;
   background: linear-gradient(115deg, transparent 12%, rgba(255, 255, 255, 0.08) 38%, transparent 56%);
@@ -418,6 +422,7 @@ body {
 /* Auth-only ColorBends-inspired ribbons: GPU-light CSS instead of a WebGL dependency. */
 .auth-color-bends {
   position: absolute;
+  will-change: transform;
   inset: -18%;
   overflow: hidden;
   opacity: 0.82;

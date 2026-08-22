@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useStore } from '@/lib/store';
 import { EXPENSE_CATEGORIES } from '@/lib/store';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -51,6 +51,7 @@ export default function DashboardPage() {
   const remaining = daysLeftInMonth(month);
   const safeDaily = remaining > 0 ? Math.max(0, Math.floor(moneyLeft / remaining)) : 0;
   const byCat = getSpentByCategory(month);
+  const accountBalances = useMemo(() => getAccountBalances(), [getAccountBalances]);
 
   const catData = EXPENSE_CATEGORIES.filter(c => byCat[c.name]).map(c => ({ name: c.name, value: byCat[c.name], color: c.color }));
   const daily = Array.from({ length: 7 }, (_, i) => {
@@ -131,7 +132,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <AccountBalanceCard balances={getAccountBalances()} />
+      <AccountBalanceCard balances={accountBalances} />
 
       {moneyLeft > 0 && remaining > 0 && (
         <Tip>Try to spend less than {'\u20B9'}{safeDaily.toLocaleString('en-IN')} today to stay on track this month.</Tip>
@@ -157,12 +158,12 @@ export default function DashboardPage() {
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 shadow-sm">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Daily Spending (7 days)</h2>
           {daily.some(d => d.amount > 0) ? (
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={200} debounce={80}>
               <BarChart data={daily}>
                 <XAxis dataKey="day" tick={{ fontSize: 11 }} stroke="#9ca3af" />
                 <YAxis tick={{ fontSize: 11 }} stroke="#9ca3af" />
                 <Tooltip formatter={(v) => ['\u20B9' + Number(v).toLocaleString('en-IN'), 'Spent']} contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', background: '#1f2937', color: '#f3f4f6' }} />
-                <Bar dataKey="amount" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="amount" fill="#6366f1" radius={[4, 4, 0, 0]} isAnimationActive={false} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -173,9 +174,9 @@ export default function DashboardPage() {
           <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Spending by Category</h2>
           {catData.length > 0 ? (
             <div className="flex items-center gap-4">
-              <ResponsiveContainer width="45%" height={180}>
+              <ResponsiveContainer width="45%" height={180} debounce={80}>
                 <PieChart>
-                  <Pie data={catData} cx="50%" cy="50%" innerRadius={45} outerRadius={70} paddingAngle={3} dataKey="value">
+                  <Pie data={catData} cx="50%" cy="50%" innerRadius={45} outerRadius={70} paddingAngle={3} dataKey="value" isAnimationActive={false}>
                     {catData.map((e, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                   </Pie>
                   <Tooltip formatter={(v) => ['\u20B9' + Number(v).toLocaleString('en-IN')]} contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', background: '#1f2937', color: '#f3f4f6' }} />

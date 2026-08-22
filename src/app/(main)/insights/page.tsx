@@ -45,6 +45,7 @@ export default function InsightsPage() {
 
   const prevMo = prevMonthKey(month);
   const byCat = getSpentByCategory(month);
+  const accountBalances = useMemo(() => getAccountBalances(month), [getAccountBalances, month]);
 
   const totalReceived = getTotalReceived(month);
   const totalExpenses = getTotalExpenses(month);
@@ -483,7 +484,7 @@ export default function InsightsPage() {
         )}
       </div>
 
-      <AccountBalanceCard balances={getAccountBalances(month)} monthLabel={`${getFullMonthLabel(month)} net balance`} />
+      <AccountBalanceCard balances={accountBalances} monthLabel={`${getFullMonthLabel(month)} net balance`} />
 
       {/* Insights Insights & Alerts */}
       <div className="space-y-3">
@@ -537,9 +538,9 @@ export default function InsightsPage() {
           <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Spending by Category</h2>
           {catData.length > 0 ? (
             <div className="flex items-center gap-4">
-              <ResponsiveContainer width="45%" height={200}>
+              <ResponsiveContainer width="45%" height={200} debounce={80}>
                 <PieChart>
-                  <Pie data={catData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={3} dataKey="value">
+                  <Pie data={catData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={3} dataKey="value" isAnimationActive={false}>
                     {catData.map((e, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                   </Pie>
                   <Tooltip formatter={(v) => ['\u20B9' + Number(v).toLocaleString('en-IN')]} contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', background: '#1f2937', color: '#f3f4f6' }} />
@@ -563,13 +564,13 @@ export default function InsightsPage() {
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 shadow-sm">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">6-Month Trend</h2>
           {trend.some(t => t.expenses > 0 || t.received > 0) ? (
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer width="100%" height={220} debounce={80}>
               <BarChart data={trend}>
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="#9ca3af" />
                 <YAxis tick={{ fontSize: 11 }} stroke="#9ca3af" />
                 <Tooltip formatter={(v) => ['\u20B9' + Number(v).toLocaleString('en-IN')]} contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', background: '#1f2937', color: '#f3f4f6' }} />
-                <Bar dataKey="received" fill="#22c55e" radius={[4, 4, 0, 0]} name="Received" />
-                <Bar dataKey="expenses" fill="#ef4444" radius={[4, 4, 0, 0]} name="Spent" />
+                <Bar dataKey="received" fill="#22c55e" radius={[4, 4, 0, 0]} name="Received" isAnimationActive={false} />
+                <Bar dataKey="expenses" fill="#ef4444" radius={[4, 4, 0, 0]} name="Spent" isAnimationActive={false} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
