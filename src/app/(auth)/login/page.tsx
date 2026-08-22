@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { AuthDotGrid } from '@/components/AuthDotGrid';
-import { AuthExitLayer } from '@/components/AuthTransitionLayer';
+import { navigateWithTransition } from '@/lib/route-transition';
 import { ExpenseWiseBrand } from '@/components/ExpenseWiseBrand';
 import { Eye, EyeOff, Mail, Lock, ArrowRight, Sparkles, TrendingUp, Wallet } from 'lucide-react';
 
@@ -17,7 +17,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isLeaving, setIsLeaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,23 +24,13 @@ export default function LoginPage() {
     setLoading(true);
     const result = await signIn(email, password);
     setLoading(false);
-    if (result.error) {
-      sessionStorage.removeItem('expensewise-auth-transition');
-      setError(result.error);
-    } else {
-      sessionStorage.setItem('expensewise-auth-transition', '1');
-      setIsLeaving(true);
-      window.setTimeout(() => {
-        sessionStorage.removeItem('expensewise-auth-transition');
-        router.push('/');
-      }, 280);
-    }
+    if (result.error) setError(result.error);
+    else navigateWithTransition(() => router.push('/'));
   };
 
   return (
     <div className="auth-shell relative flex min-h-screen overflow-hidden">
       <AuthDotGrid />
-      <AuthExitLayer active={isLeaving} />
 
       {/* Left Side - Branding (Desktop) */}
       <div className="hidden lg:flex lg:w-1/2 relative z-10 items-center justify-center p-12 xl:p-16">

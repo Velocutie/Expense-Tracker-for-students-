@@ -14,7 +14,6 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   const isPublicPath = PUBLIC_PATHS.some(p => pathname.startsWith(p));
-  const isAuthTransitioning = typeof window !== 'undefined' && sessionStorage.getItem('expensewise-auth-transition') === '1';
 
   useEffect(() => {
     if (loading) return;
@@ -24,14 +23,11 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       router.push('/login');
     }
 
-    // Let Login/Sign Up finish their short exit transition before redirecting.
-    if (user && isPublicPath && isAuthTransitioning) return;
-
     // If logged in and on a public page, redirect to dashboard
     if (user && isPublicPath) {
       router.push('/');
     }
-  }, [user, loading, isPublicPath, isAuthTransitioning, router]);
+  }, [user, loading, isPublicPath, router]);
 
   // Show loading spinner while checking auth
   if (loading) {
@@ -52,7 +48,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   }
 
   // Don't render public pages if authenticated (will redirect)
-  if (user && isPublicPath && !isAuthTransitioning) {
+  if (user && isPublicPath) {
     return null;
   }
 
