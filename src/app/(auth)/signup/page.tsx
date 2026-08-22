@@ -18,6 +18,7 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,12 +27,21 @@ export default function SignupPage() {
     setLoading(true);
     const result = await signUp(email, password, name);
     setLoading(false);
-    if (result.error) setError(result.error);
-    else router.push('/');
+    if (result.error) {
+      sessionStorage.removeItem('expensewise-auth-transition');
+      setError(result.error);
+    } else {
+      sessionStorage.setItem('expensewise-auth-transition', '1');
+      setIsLeaving(true);
+      window.setTimeout(() => {
+        sessionStorage.removeItem('expensewise-auth-transition');
+        router.push('/');
+      }, 280);
+    }
   };
 
   return (
-    <div className="auth-shell relative flex min-h-screen overflow-hidden">
+    <div className={`auth-shell relative flex min-h-screen overflow-hidden${isLeaving ? ' auth-is-leaving' : ''}`}>
       <AuthDotGrid />
 
       {/* Left Side - Branding (Desktop) */}
