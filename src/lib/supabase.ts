@@ -17,6 +17,7 @@ export interface Database {
           category: string;
           description: string;
           date: string;
+          payment_method: string | null;
           created_at: string;
         };
         Insert: Omit<{ id: string; user_id: string; created_at: string }, 'id' | 'created_at'>;
@@ -29,6 +30,7 @@ export interface Database {
           source: string;
           date: string;
           note: string;
+          payment_method: string | null;
           created_at: string;
         };
         Insert: Omit<{ id: string; user_id: string; created_at: string }, 'id' | 'created_at'>;

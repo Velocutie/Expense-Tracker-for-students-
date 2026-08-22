@@ -15,6 +15,7 @@ export interface Transaction {
   category: string;
   description: string;
   date: string;
+  paymentMethod?: 'cash' | 'bank_upi' | 'card' | 'other';
   createdAt: string;
 }
 

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useStore } from '@/lib/store';
-import { MONEY_SOURCES } from '@/lib/store';
+import { MONEY_SOURCES, PAYMENT_METHODS, type PaymentMethod } from '@/lib/store';
 import { Plus, Trash2 } from 'lucide-react';
 import { Tip } from '@/components/Tip';
 import { Modal } from '@/components/Modal';
@@ -26,13 +26,13 @@ export default function MoneyReceivedPage() {
   const { moneyReceived, addMoneyReceived, deleteMoneyReceived } = useStore();
   const [showForm, setShowForm] = useState(false);
   const [month, setMonth] = useState(getMonthKey(new Date().toISOString().slice(0, 10)));
-  const [form, setForm] = useState({ amount: '', source: 'Parents', date: new Date().toISOString().slice(0, 10), note: '' });
+  const [form, setForm] = useState({ amount: '', source: 'Parents', date: new Date().toISOString().slice(0, 10), note: '', paymentMethod: 'bank_upi' as PaymentMethod });
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [amountError, setAmountError] = useState<string | null>(null);
 
   const resetForm = () => {
-    setForm({ amount: '', source: 'Parents', date: new Date().toISOString().slice(0, 10), note: '' });
+    setForm({ amount: '', source: 'Parents', date: new Date().toISOString().slice(0, 10), note: '', paymentMethod: 'bank_upi' });
     setShowForm(false);
     setSubmitError(null);
     setAmountError(null);
@@ -57,7 +57,7 @@ export default function MoneyReceivedPage() {
     setSubmitError(null);
     setAmountError(null);
 
-    const result = await addMoneyReceived({ amount: amt, source: form.source, date: form.date, note: form.note });
+    const result = await addMoneyReceived({ amount: amt, source: form.source, date: form.date, note: form.note, paymentMethod: form.paymentMethod });
     setSubmitting(false);
     if (result.error) { setSubmitError(result.error); return; }
     resetForm();
@@ -176,6 +176,18 @@ export default function MoneyReceivedPage() {
             </div>
           </div>
 
+          {/* Account */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Add to</label>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {PAYMENT_METHODS.map(method => (
+                <button key={method.value} type="button" onClick={() => setForm(f => ({ ...f, paymentMethod: method.value }))} className={`rounded-xl px-2.5 py-2.5 text-xs font-semibold transition-all active:scale-95 ${form.paymentMethod === method.value ? 'bg-purple-100 text-purple-700 ring-2 ring-purple-500 dark:bg-purple-500/20 dark:text-purple-200' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600'}`}>
+                  {method.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Date */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
@@ -241,7 +253,7 @@ export default function MoneyReceivedPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{m.source}{m.note ? ' — ' + m.note : ''}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{m.date}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{m.date} &bull; {PAYMENT_METHODS.find(method => method.value === (m.paymentMethod || 'other'))?.label || 'Other'}</p>
                   </div>
                   <p className="text-sm font-semibold text-green-600 dark:text-green-400 shrink-0">+₹{m.amount.toLocaleString('en-IN')}</p>
                   <button

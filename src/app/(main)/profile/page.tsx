@@ -158,16 +158,17 @@ export default function ProfilePage() {
         savedMoneyEntries: store.savedMoneyEntries,
         savingsGoals: store.savingsGoals,
         recurringExpenses: store.recurringExpenses,
+        accountBalances: store.getAccountBalances(),
       };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       downloadBlob(blob, `expensewise-export-${new Date().toISOString().slice(0, 10)}.json`);
     } else {
       const rows = [
-        ['Type', 'Date', 'Amount', 'Category/Source', 'Description/Note', 'Frequency'],
-        ...store.expenses.map(e => ['Expense', e.date, e.amount.toString(), e.category, e.description, '']),
-        ...store.moneyReceived.map(m => ['Money Received', m.date, m.amount.toString(), m.source, m.note, '']),
-        ...store.savedMoneyEntries.map(s => [`Saved (${s.type})`, s.date, (s.type === 'add' ? s.amount : -s.amount).toString(), '', s.note, '']),
-        ...store.recurringExpenses.map(r => ['Recurring', '', r.amount.toString(), r.category, r.name, r.frequency]),
+        ['Type', 'Date', 'Amount', 'Category/Source', 'Description/Note', 'Frequency', 'Payment Method'],
+        ...store.expenses.map(e => ['Expense', e.date, e.amount.toString(), e.category, e.description, '', e.paymentMethod || 'other']),
+        ...store.moneyReceived.map(m => ['Money Received', m.date, m.amount.toString(), m.source, m.note, '', m.paymentMethod || 'other']),
+        ...store.savedMoneyEntries.map(s => [`Saved (${s.type})`, s.date, (s.type === 'add' ? s.amount : -s.amount).toString(), '', s.note, '', '']),
+        ...store.recurringExpenses.map(r => ['Recurring', '', r.amount.toString(), r.category, r.name, r.frequency, '']),
       ];
       const csv = rows.map(r => r.map(c => `"${c.replace(/"/g, '""')}"`).join(',')).join('\n');
       const blob = new Blob([csv], { type: 'text/csv' });

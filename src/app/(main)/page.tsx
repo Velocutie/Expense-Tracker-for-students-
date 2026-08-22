@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { Tip } from '@/components/Tip';
 import { useAuth } from '@/lib/auth';
 import { SmartTips } from '@/components/SmartTips';
+import { AccountBalanceCard } from '@/components/AccountBalanceCard';
 
 function getMonthKey(date: Date) { return date.toISOString().slice(0, 7); }
 function getMonthLabel(mk: string) {
@@ -40,7 +41,7 @@ const COLORS = ['#3b82f6','#ef4444','#22c55e','#f97316','#8b5cf6','#ec4899'];
 export default function DashboardPage() {
   const store = useStore();
   const { user } = useAuth();
-  const { expenses, budgets, savingsGoals, settings, getTotalReceived, getTotalExpenses, getCurrentSavedMoney, getSpentByCategory } = store;
+  const { expenses, budgets, savingsGoals, settings, getTotalReceived, getTotalExpenses, getCurrentSavedMoney, getSpentByCategory, getAccountBalances } = store;
   const [month, setMonth] = useState(getMonthKey(new Date()));
 
   const totalReceived = getTotalReceived(month);
@@ -125,10 +126,12 @@ export default function DashboardPage() {
           <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center"><Calendar size={18} className="text-indigo-600 dark:text-indigo-400" /></div>
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400">Safe to spend today</p>
-            <p className="text-lg font-bold text-indigo-600 dark:text-indigo-400">{'\u20B9'}{safeDaily.toLocaleString('en-IN')} <span className="text-sm font-normal text-gray-400 dark:text-gray-500">({remaining} days left)</span></p>
+            <p className="text-lg font-bold text-indigo-600 dark:text-indigo-400">{ '\u20B9' }{safeDaily.toLocaleString('en-IN')} <span className="text-sm font-normal text-gray-400 dark:text-gray-500">({remaining} days left)</span></p>
           </div>
         </div>
       )}
+
+      <AccountBalanceCard balances={getAccountBalances()} />
 
       {moneyLeft > 0 && remaining > 0 && (
         <Tip>Try to spend less than {'\u20B9'}{safeDaily.toLocaleString('en-IN')} today to stay on track this month.</Tip>

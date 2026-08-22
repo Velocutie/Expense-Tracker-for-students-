@@ -154,3 +154,19 @@ CREATE POLICY "Users can view own settings" ON app_settings FOR SELECT USING (au
 CREATE POLICY "Users can insert own settings" ON app_settings FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update own settings" ON app_settings FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Users can delete own settings" ON app_settings FOR DELETE USING (auth.uid() = user_id);
+
+
+-- ============================================
+-- PAYMENT METHOD MIGRATION
+-- ============================================
+-- Existing rows remain valid and are treated as Other by the app.
+ALTER TABLE expenses ADD COLUMN IF NOT EXISTS payment_method TEXT DEFAULT 'other';
+ALTER TABLE money_received ADD COLUMN IF NOT EXISTS payment_method TEXT DEFAULT 'other';
+
+ALTER TABLE expenses DROP CONSTRAINT IF EXISTS expenses_payment_method_check;
+ALTER TABLE expenses ADD CONSTRAINT expenses_payment_method_check
+  CHECK (payment_method IN ('cash', 'bank_upi', 'card', 'other'));
+
+ALTER TABLE money_received DROP CONSTRAINT IF EXISTS money_received_payment_method_check;
+ALTER TABLE money_received ADD CONSTRAINT money_received_payment_method_check
+  CHECK (payment_method IN ('cash', 'bank_upi', 'card', 'other'));

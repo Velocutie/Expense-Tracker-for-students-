@@ -11,6 +11,7 @@ import {
 import { Tip } from '@/components/Tip';
 import { CashFlowForecast } from '@/components/CashFlowForecast';
 import { CurrencyRateCard } from '@/components/CurrencyRateCard';
+import { AccountBalanceCard } from '@/components/AccountBalanceCard';
 
 function getMonthKey(d: Date | string) { return typeof d === 'string' ? d.slice(0, 7) : d.toISOString().slice(0, 7); }
 function prevMonthKey(mk: string) {
@@ -36,7 +37,7 @@ const COLORS = ['#3b82f6','#ef4444','#22c55e','#f97316','#8b5cf6','#ec4899'];
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function InsightsPage() {
-  const { expenses, moneyReceived, savedMoneyEntries, recurringExpenses, settings, getCurrentSavedMoney, getSpentByCategory, getTotalReceived, getTotalExpenses } = useStore();
+  const { expenses, moneyReceived, savedMoneyEntries, recurringExpenses, settings, getCurrentSavedMoney, getSpentByCategory, getTotalReceived, getTotalExpenses, getAccountBalances } = useStore();
   
   const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [month, setMonth] = useState(getMonthKey(todayStr));
@@ -481,6 +482,8 @@ export default function InsightsPage() {
           </div>
         )}
       </div>
+
+      <AccountBalanceCard balances={getAccountBalances(month)} monthLabel={`${getFullMonthLabel(month)} net balance`} />
 
       {/* Insights Insights & Alerts */}
       <div className="space-y-3">

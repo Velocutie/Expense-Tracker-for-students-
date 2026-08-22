@@ -11,12 +11,26 @@ import { useAuth } from './auth';
 
 // ===================== TYPES =====================
 
+export type PaymentMethod = 'cash' | 'bank_upi' | 'card' | 'other';
+
+export const PAYMENT_METHODS: Array<{ value: PaymentMethod; label: string }> = [
+  { value: 'cash', label: 'Cash' },
+  { value: 'bank_upi', label: 'Bank / UPI' },
+  { value: 'card', label: 'Card' },
+  { value: 'other', label: 'Other' },
+];
+
+export function normalizePaymentMethod(value: unknown): PaymentMethod {
+  return value === 'cash' || value === 'bank_upi' || value === 'card' || value === 'other' ? value : 'other';
+}
+
 export interface Expense {
   id: string;
   amount: number;
   category: string;
   description: string;
   date: string;
+  paymentMethod: PaymentMethod;
   createdAt: string;
 }
 
@@ -26,6 +40,7 @@ export interface MoneyReceived {
   source: string;
   date: string;
   note: string;
+  paymentMethod: PaymentMethod;
   createdAt: string;
 }
 
@@ -135,6 +150,7 @@ interface StoreContextType extends StoreData {
   getMoneyLeft: (month?: string) => number;
   getCurrentSavedMoney: () => number;
   getSpentByCategory: (month?: string) => Record<string, number>;
+  getAccountBalances: (month?: string) => Record<PaymentMethod, number>;
   isUsingCloud: boolean;
 }
 
@@ -200,11 +216,13 @@ async function loadSupabaseData(userId: string): Promise<StoreData> {
   return {
     expenses: (expensesRes.data || []).map(e => ({
       id: e.id, amount: Number(e.amount), category: e.category,
-      description: e.description, date: e.date, createdAt: e.created_at,
+      description: e.description, date: e.date,
+      paymentMethod: normalizePaymentMethod(e.payment_method), createdAt: e.created_at,
     })),
     moneyReceived: (moneyRes.data || []).map(m => ({
       id: m.id, amount: Number(m.amount), source: m.source,
-      date: m.date, note: m.note, createdAt: m.created_at,
+      date: m.date, note: m.note,
+      paymentMethod: normalizePaymentMethod(m.payment_method), createdAt: m.created_at,
     })),
     budgets: (budgetsRes.data || []).map(b => ({
       id: b.id, category: b.category, limit: Number(b.limit),
@@ -300,7 +318,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.from('expenses').insert({
       id, user_id: user.id, amount: expense.amount,
       category: expense.category, description: expense.description,
-      date: expense.date, created_at: createdAt,
+      date: expense.date, payment_method: expense.paymentMethod, created_at: createdAt,
     });
 
     if (error) {
@@ -319,6 +337,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (d.category !== undefined) update.category = d.category;
     if (d.description !== undefined) update.description = d.description;
     if (d.date !== undefined) update.date = d.date;
+    if (d.paymentMethod !== undefined) update.payment_method = d.paymentMethod;
 
     const { error } = await supabase.from('expenses').update(update).eq('id', id);
     if (error) {
@@ -350,7 +369,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     const { error } = await supabase.from('money_received').insert({
       id, user_id: user.id, amount: m.amount,
-      source: m.source, date: m.date, note: m.note, created_at: createdAt,
+      source: m.source, date: m.date, note: m.note,
+      payment_method: m.paymentMethod, created_at: createdAt,
     });
 
     if (error) {
@@ -605,6 +625,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return r;
   }, [data.expenses]);
 
+  const getAccountBalances = useCallback((month?: string) => {
+    const balances: Record<PaymentMethod, number> = { cash: 0, bank_upi: 0, card: 0, other: 0 };
+    const inScope = (date: string) => !month || mk(date) === month;
+    data.moneyReceived.filter(x => inScope(x.date)).forEach(x => { balances[normalizePaymentMethod(x.paymentMethod)] += x.amount; });
+    data.expenses.filter(x => inScope(x.date)).forEach(x => { balances[normalizePaymentMethod(x.paymentMethod)] -= x.amount; });
+    return balances;
+  }, [data.moneyReceived, data.expenses]);
+
   if (!loaded) return null;
 
   return (
@@ -614,7 +642,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addSavingsGoal, updateSavingsGoal, deleteSavingsGoal,
       addRecurringExpense, updateRecurringExpense, deleteRecurringExpense,
       updateSettings, getTotalReceived, getTotalExpenses, getMoneyLeft,
-      getCurrentSavedMoney, getSpentByCategory, isUsingCloud,
+      getCurrentSavedMoney, getSpentByCategory, getAccountBalances, isUsingCloud,
     }}>
       {children}
     </StoreContext.Provider>

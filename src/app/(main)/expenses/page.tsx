@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useStore } from '@/lib/store';
-import { EXPENSE_CATEGORIES } from '@/lib/store';
+import { EXPENSE_CATEGORIES, PAYMENT_METHODS, type PaymentMethod } from '@/lib/store';
 import { Plus, Trash2, Pencil } from 'lucide-react';
 import { Tip } from '@/components/Tip';
 import { Modal } from '@/components/Modal';
@@ -13,12 +13,12 @@ export default function ExpensesPage() {
   const { expenses, addExpense, updateExpense, deleteExpense } = useStore();
   const [showForm, setShowForm] = useState(false);
   const [month, setMonth] = useState(getMonthKey(new Date().toISOString().slice(0, 10)));
-  const [form, setForm] = useState({ amount: '', category: 'Food & Drinks', description: '', date: new Date().toISOString().slice(0, 10) });
+  const [form, setForm] = useState({ amount: '', category: 'Food & Drinks', description: '', date: new Date().toISOString().slice(0, 10), paymentMethod: 'bank_upi' as PaymentMethod });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const resetForm = () => { setForm({ amount: '', category: 'Food & Drinks', description: '', date: new Date().toISOString().slice(0, 10) }); setShowForm(false); setEditingId(null); setSubmitError(null); };
+  const resetForm = () => { setForm({ amount: '', category: 'Food & Drinks', description: '', date: new Date().toISOString().slice(0, 10), paymentMethod: 'bank_upi' }); setShowForm(false); setEditingId(null); setSubmitError(null); };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,17 +28,17 @@ export default function ExpensesPage() {
     setSubmitError(null);
     let result;
     if (editingId) {
-      result = await updateExpense(editingId, { amount: amt, category: form.category, description: form.description, date: form.date });
+      result = await updateExpense(editingId, { amount: amt, category: form.category, description: form.description, date: form.date, paymentMethod: form.paymentMethod });
     } else {
-      result = await addExpense({ amount: amt, category: form.category, description: form.description, date: form.date });
+      result = await addExpense({ amount: amt, category: form.category, description: form.description, date: form.date, paymentMethod: form.paymentMethod });
     }
     setSubmitting(false);
     if (result.error) { setSubmitError(result.error); return; }
     resetForm();
   };
 
-  const handleEdit = (ex: { id: string; amount: number; category: string; description: string; date: string }) => {
-    setForm({ amount: ex.amount.toString(), category: ex.category, description: ex.description, date: ex.date });
+  const handleEdit = (ex: { id: string; amount: number; category: string; description: string; date: string; paymentMethod?: PaymentMethod }) => {
+    setForm({ amount: ex.amount.toString(), category: ex.category, description: ex.description, date: ex.date, paymentMethod: ex.paymentMethod || 'other' });
     setEditingId(ex.id);
     setShowForm(true);
   };
@@ -103,6 +103,16 @@ export default function ExpensesPage() {
             </div>
           </div>
           <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Paid from</label>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {PAYMENT_METHODS.map(method => (
+                <button key={method.value} type="button" onClick={() => setForm(f => ({ ...f, paymentMethod: method.value }))} className={`rounded-xl px-2.5 py-2.5 text-xs font-semibold transition-all active:scale-95 ${form.paymentMethod === method.value ? 'bg-purple-100 text-purple-700 ring-2 ring-purple-500 dark:bg-purple-500/20 dark:text-purple-200' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600'}`}>
+                  {method.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
             <input type="text" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="e.g. Lunch at cafeteria" className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-colors" />
           </div>
@@ -131,7 +141,7 @@ export default function ExpensesPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{e.description || e.category}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{e.category} &bull; {e.date}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{e.category} &bull; {e.date} &bull; {PAYMENT_METHODS.find(m => m.value === (e.paymentMethod || 'other'))?.label || 'Other'}</p>
                   </div>
                   <p className="text-sm font-semibold text-red-600 dark:text-red-400 shrink-0">-{'\u20B9'}{e.amount.toLocaleString('en-IN')}</p>
                   <div className="flex gap-1 shrink-0">
